@@ -23,34 +23,34 @@ This UI depends on the Restaurant Inventory API.
 The backend must be running locally for the UI to function.
 
 Default backend URL:
+```
 http://localhost:3001/api/v1
-
-http://localhost:3001/api/v1
-
-```md
-## Current Features
-
-- Product list page displaying live data from the Rails API
-- Server-side data fetching using Next.js App Router
-- Clean separation between UI and backend
 ```
 
-```md
-## Current Features
+## Running the Project
 
-- Product list page displaying live data from the Rails API
-- Server-side data fetching using Next.js App Router
-- Clean separation between UI and backend
+```bash
+git clone git@github.com:yourusername/restaurant_inventory_ui.git
+cd restaurant_inventory_ui
+npm install
+npm run dev
 ```
 
 ### The App will be available at:
+```
 http://localhost:3000
+```
 
----
+## Environment Variables
 
-```md
+Create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+```
+
 ## Project Structure
-
+```
 - `app/` – Next.js App Router pages
 - `app/products` – Product listing UI
 - `public/` – Static assets
