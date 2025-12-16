@@ -26,6 +26,8 @@ Default backend URL:
 ```
 http://localhost:3001/api/v1
 ```
+See the API repo here:
+https://github.com/malexander15/restaurant_inventory_api
 
 ## Running the Project
 
