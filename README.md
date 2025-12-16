@@ -55,3 +55,11 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 - `app/products` – Product listing UI
 - `public/` – Static assets
 ```
+## Future Improvements
+
+- Product creation and editing forms
+- Recipe builder interface
+- Inventory depletion UI
+- Low-stock alerts
+- Barcode scanning input
+- Authentication
