@@ -35,12 +35,12 @@ export default async function ProductsPage() {
                 <h2 className="text-lg font-semibold">
                   {product.name}
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-white-600">
                   {product.stock_quantity} {product.unit}
                 </p>
               </div>
 
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-white-700">
                 ${product.unit_cost}
               </div>
             </div>
