@@ -117,7 +117,7 @@ export default function NewProductPage() {
             name="unit"
             value={form.unit}
             onChange={handleChange}
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded bg-black"
           >
             <option value="oz">Ounces (oz)</option>
             <option value="pcs">Pieces (pcs)</option>

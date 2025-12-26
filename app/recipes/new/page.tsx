@@ -1,8 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  OutlinedInput,
+} from "@mui/material";
+
+
+type Product = {
+  id: number;
+  name: string;
+  unit: "oz" | "pcs";
+};
+
+type PreppedRecipe = {
+  id: number;
+  name: string;
+};
+
+type IngredientOption = {
+  id: number;
+  name: string;
+  ingredientType: "Product" | "Recipe";
+  unit?: "oz" | "pcs"; // only for products
+};
 
 export default function NewRecipePage() {
   const router = useRouter();
@@ -11,8 +39,9 @@ export default function NewRecipePage() {
     name: "",
     is_prepped: false,
   });
-
-
+  const [ingredientOptions, setIngredientOptions] = useState<IngredientOption[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<IngredientOption[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [errors, setErrors] = useState<string[]>([]);
 
   function handleChange(
@@ -27,35 +56,105 @@ export default function NewRecipePage() {
   }
 
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setErrors([]);
+    async function handleSubmit(e: React.FormEvent) {
+      e.preventDefault();
+      setErrors([]);
 
-    const payload = {
-      name: form.name,
-      recipe_type: form.is_prepped ? "prepped_item" : "menu_item",
-    };
+      // 1️⃣ Create recipe
+      const recipeRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/recipes`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipe: {
+              name: form.name,
+              recipe_type: form.is_prepped ? "prepped_item" : "menu_item",
+            },
+          }),
+        }
+      );
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/recipes`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipe: payload }),
+      if (!recipeRes.ok) {
+        const data = await recipeRes.json();
+        setErrors(data.errors || ["Failed to create recipe"]);
+        return;
       }
-    );
 
-    if (!res.ok) {
-      const data = await res.json();
-      setErrors(data.errors || ["Something went wrong"]);
-      return;
+      const recipe = await recipeRes.json();
+
+      // 2️⃣ Create recipe ingredients
+      for (const ingredient of selectedIngredients) {
+        const key = `${ingredient.ingredientType}-${ingredient.id}`;
+
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipe.id}/recipe_ingredients`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              recipe_ingredient: {
+                ingredient_id: ingredient.id,
+                ingredient_type: ingredient.ingredientType,
+                quantity: quantities[key],
+              },
+            }),
+          }
+        );
+      }
+
+      // 3️⃣ Done
+      router.push("/recipes");
     }
 
-    router.push("/recipes");
-  }
 
+  useEffect(() => {
+    async function loadIngredients() {
+      try {
+        // Always load products
+        const productsRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/products`,
+          { cache: "no-store" }
+        );
+        const products: Product[] = await productsRes.json();
+
+        let options: IngredientOption[] = products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          ingredientType: "Product",
+          unit: p.unit,
+        }));
+
+        // Only load prepped recipes if NOT a prepped item
+        if (!form.is_prepped) {
+          const recipesRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/recipes?recipe_type=prepped_item`,
+            { cache: "no-store" }
+          );
+          const prepped: PreppedRecipe[] = await recipesRes.json();
+
+          options = options.concat(
+            prepped.map((r) => ({
+              id: r.id,
+              name: r.name,
+              ingredientType: "Recipe",
+            }))
+          );
+        }
+
+        setIngredientOptions(options);
+        setSelectedIngredients([]);
+        setQuantities({});
+      } catch (err) {
+        console.error("Failed to load ingredients", err);
+      }
+    }
+
+    loadIngredients();
+  }, [form.is_prepped]);
 
   return (
+    
     <div className="max-w-xl mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
@@ -121,6 +220,76 @@ export default function NewRecipePage() {
             </div>
           </div>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Ingredients
+          </label>
+
+          <FormControl fullWidth>
+            <InputLabel>Select Ingredients</InputLabel>     
+            <Select
+              multiple
+              value={selectedIngredients}
+              className="bg-[#262626]"
+              onChange={(e) =>
+                setSelectedIngredients(e.target.value as IngredientOption[])
+              }
+              input={<OutlinedInput label="Select Ingredients" />}
+              renderValue={(selected) =>
+                selected.map((i) => i.name).join(", ")
+              }
+            >
+              {ingredientOptions.map((option) => {
+                const key = `${option.ingredientType}-${option.id}`;
+                const checked = selectedIngredients.some(
+                  (i) =>
+                    i.id === option.id &&
+                    i.ingredientType === option.ingredientType
+                );
+
+                return (
+                  <MenuItem key={key} value={option}>
+                    <Checkbox checked={checked} />
+                    <ListItemText
+                      primary={option.name}
+                      secondary={
+                        option.ingredientType === "Product"
+                          ? `Product (${option.unit})`
+                          : "Prepped Item"
+                      }
+                    />
+                  </MenuItem>
+                );
+              })}
+            </Select>
+            {selectedIngredients.map((ingredient) => {
+              const key = `${ingredient.ingredientType}-${ingredient.id}`;
+
+              return (
+                <div key={key} className="flex items-center gap-3 mt-2">
+                  <span className="text-sm w-40">{ingredient.name}</span>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={ingredient.unit ? ingredient.unit : "qty"}
+                    value={quantities[key] || ""}
+                    onChange={(e) =>
+                      setQuantities({
+                        ...quantities,
+                        [key]: Number(e.target.value),
+                      })
+                    }
+                    className="w-24 border rounded px-2 py-1 text-sm"
+                  />
+                </div>
+              );
+            })}
+          </FormControl>
+        </div>
+
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-4">
