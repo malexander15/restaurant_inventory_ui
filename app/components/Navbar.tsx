@@ -73,6 +73,12 @@ export default function Navbar() {
             >
               New Recipe
             </Link>
+            <Link
+              href="/recipes/deplete"
+              className="block px-4 py-2 hover:bg-gray-100/10"
+            >
+              Deplete Recipes
+            </Link>
           </div>
         </div>
       </div>
