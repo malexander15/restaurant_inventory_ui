@@ -41,6 +41,12 @@ export default function Navbar() {
             >
               New Product
             </Link>
+            <Link
+              href="/products/replenish"
+              className="block px-4 py-2 hover:bg-gray-100/10"
+            >
+              Replenish
+            </Link>
           </div>
         </div>
 

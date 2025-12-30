@@ -1,3 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Snackbar, Alert } from "@mui/material";
+
 type Product = {
   id: number
   name: string
@@ -6,20 +12,58 @@ type Product = {
   unit_cost: string
 }
 
-export default async function ProductsPage() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/products`,
-    { cache: "no-store" }
-  )
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const searchParams = useSearchParams();
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch products")
+  useEffect(() => {
+    if (searchParams.get("replenished") === "1") {
+      setShowSuccess(true);
+    }
+  }, [searchParams]);
+
+  // ✅ fetch products in an effect
+  useEffect(() => {
+    async function loadProducts() {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/products`,
+        { cache: "no-store" }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch products");
+      }
+
+      const data = await res.json();
+      setProducts(data);
+      setLoading(false);
+    }
+
+    loadProducts();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8">Loading products…</div>;
   }
-
-  const products: Product[] = await res.json()
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={6000}
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowSuccess(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          Inventory replenished successfully!
+        </Alert>
+      </Snackbar>
       <h1 className="text-3xl font-bold mb-6">Products</h1>
 
       {products.length === 0 ? (

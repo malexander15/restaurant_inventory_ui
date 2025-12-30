@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import {Select} from "@mui/material";
+import ProductsPage from '../page';
 type ProductForm = {
   name: string;
   barcode: string;
@@ -18,7 +19,7 @@ export default function NewProductPage() {
   const [form, setForm] = useState<ProductForm>({
     name: '',
     barcode: '',
-    unit: '',
+    unit: 'oz',
     stock_quantity: '',
     unit_cost: ''
   });
