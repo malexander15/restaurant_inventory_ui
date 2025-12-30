@@ -73,7 +73,7 @@ export default function NewProductPage() {
       setErrors(data.errors || ["Something went wrong"])
       return
     }
-    router.push('/products');
+    router.push('/products/?created=1');
   }
 
   return (

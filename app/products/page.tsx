@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Snackbar, Alert } from "@mui/material";
+import {
+   Snackbar, 
+   Alert,
+   Dialog,
+   DialogTitle,
+   DialogContent,
+   DialogActions,
+   Button
+  } 
+from "@mui/material";
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 
 type Product = {
   id: number
@@ -14,15 +24,46 @@ type Product = {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+  open: boolean;
+  message: string;
+  severity: "success" | "error";
+}>({
+  open: false,
+  message: "",
+  severity: "success",
+});
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (searchParams.get("replenished") === "1") {
-      setShowSuccess(true);
+      setSnackbar({
+        open: true,
+        severity: "success",
+        message: "Inventory replenished successfully!",
+      });
+    }
+
+    if (searchParams.get("deleted") === "1") {
+      setSnackbar({
+        open: true,
+        severity: "success",
+        message: "Product deleted successfully!",
+      });
+    }
+
+    if (searchParams.get("created") === "1") {
+      setSnackbar({
+        open: true,
+        severity: "success",
+        message: "Product created successfully!",
+      });
     }
   }, [searchParams]);
+
+
 
   // ✅ fetch products in an effect
   useEffect(() => {
@@ -48,20 +89,55 @@ export default function ProductsPage() {
     return <div className="p-8">Loading products…</div>;
   }
 
+  async function handleDelete() {
+  if (!deleteTarget) return;
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/products/${deleteTarget.id}`,
+      { method: "DELETE" }
+    );
+
+    if (!res.ok) {
+      throw new Error("Delete failed");
+    }
+
+    // Remove from UI
+    setProducts((prev) =>
+      prev.filter((p) => p.id !== deleteTarget.id)
+    );
+
+    setSnackbar({
+      open: true,
+      severity: "success",
+      message: `"${deleteTarget.name}" was deleted successfully`,
+    });
+  } catch {
+    setSnackbar({
+      open: true,
+      severity: "error",
+      message: "Failed to delete product",
+    });
+  } finally {
+    setDeleteTarget(null);
+  }
+}
+
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <Snackbar
-        open={showSuccess}
+        open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setShowSuccess(false)}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          onClose={() => setShowSuccess(false)}
-          severity="success"
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
           sx={{ width: "100%" }}
         >
-          Inventory replenished successfully!
+          {snackbar.message}
         </Alert>
       </Snackbar>
       <h1 className="text-3xl font-bold mb-6">Products</h1>
@@ -73,24 +149,67 @@ export default function ProductsPage() {
           {products.map((product) => (
             <div
               key={product.id}
-              className="border rounded p-4 flex justify-between items-center"
+              className="border rounded p-4 flex items-center justify-between"
             >
+              {/* LEFT: Name + stock */}
               <div>
                 <h2 className="text-lg font-semibold">
                   {product.name}
                 </h2>
-                <p className="text-sm text-white-600">
-                  {product.stock_quantity} {product.unit}
-                </p>
+
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <span>
+                    {product.stock_quantity} {product.unit}
+                  </span>
+
+                  <HighlightOffIcon
+                    className="
+                      cursor-pointer
+                      text-red-500
+                      text-[6px]
+                      hover:text-red-400
+                    "
+                    onClick={() => setDeleteTarget(product)}
+                  />
+                </div>
               </div>
 
-              <div className="text-sm text-white-700">
+              {/* RIGHT: price */}
+              <div className="text-sm text-white/70">
                 ${product.unit_cost}
               </div>
             </div>
           ))}
         </div>
       )}
+      <Dialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+      >
+        <DialogTitle>Delete Product</DialogTitle>
+
+        <DialogContent>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete{" "}
+            <strong>{deleteTarget?.name}</strong>?
+            <br />
+            This action cannot be undone.
+          </p>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>
+            Cancel
+          </Button>
+
+          <Button
+            color="error"
+            onClick={handleDelete}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }

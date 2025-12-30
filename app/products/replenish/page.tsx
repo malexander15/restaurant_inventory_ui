@@ -88,7 +88,6 @@ export default function ReplenishInventoryPage() {
       }
     }
 
-
     // ✅ SUCCESS
     router.push("/products?replenished=1");
   }
