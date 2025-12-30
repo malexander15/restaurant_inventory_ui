@@ -9,10 +9,13 @@ import {
    DialogTitle,
    DialogContent,
    DialogActions,
-   Button
+   Button,
+   Tooltip,
+   Paper
   } 
 from "@mui/material";
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import EditIcon from "@mui/icons-material/Edit";
 
 type Product = {
   id: number
@@ -20,6 +23,7 @@ type Product = {
   unit: string
   stock_quantity: string
   unit_cost: string
+  barcode?: string | null
 }
 
 export default function ProductsPage() {
@@ -27,14 +31,21 @@ export default function ProductsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<{
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-}>({
-  open: false,
-  message: "",
-  severity: "success",
-});
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const [editTarget, setEditTarget] = useState<Product | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    barcode: "",
+    unit: "oz",
+    unit_cost: "",
+  });
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -112,16 +123,60 @@ export default function ProductsPage() {
       severity: "success",
       message: `"${deleteTarget.name}" was deleted successfully`,
     });
-  } catch {
+    } catch {
+      setSnackbar({
+        open: true,
+        severity: "error",
+        message: "Failed to delete product",
+      });
+    } finally {
+      setDeleteTarget(null);
+    }
+  }
+
+  async function handleEditSave() {
+  if (!editTarget) return;
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/products/${editTarget.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product: {
+            name: editForm.name,
+            barcode: editForm.barcode,
+            unit: editForm.unit,
+            unit_cost: Number(editForm.unit_cost),
+          },
+        }),
+      }
+    );
+
+    if (!res.ok) throw new Error("Update failed");
+
+    const updated = await res.json();
+
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updated.id ? updated : p))
+    );
+
     setSnackbar({
       open: true,
-      severity: "error",
-      message: "Failed to delete product",
+      severity: "success",
+      message: "Product updated successfully!",
     });
-  } finally {
-    setDeleteTarget(null);
+    } catch {
+      setSnackbar({
+        open: true,
+        severity: "error",
+        message: "Failed to update product",
+      });
+    } finally {
+      setEditTarget(null);
+    }
   }
-}
 
 
   return (
@@ -161,22 +216,30 @@ export default function ProductsPage() {
                   <span>
                     {product.stock_quantity} {product.unit}
                   </span>
-
+                <div className="flex items-center gap-2">
+                  <EditIcon
+                    className="cursor-pointer text-blue-400 hover:text-blue-300"
+                    onClick={() => {
+                      setEditTarget(product);
+                      setEditForm({
+                        name: product.name,
+                        barcode: product.barcode || "",
+                        unit: product.unit,
+                        unit_cost: product.unit_cost,
+                      });
+                    }}
+                  />
                   <HighlightOffIcon
-                    className="
-                      cursor-pointer
-                      text-red-500
-                      text-[6px]
-                      hover:text-red-400
-                    "
+                    className="cursor-pointer text-red-500 hover:text-red-400"
                     onClick={() => setDeleteTarget(product)}
                   />
+                </div>
                 </div>
               </div>
 
               {/* RIGHT: price */}
               <div className="text-sm text-white/70">
-                ${product.unit_cost}
+                ${product.unit_cost}/oz
               </div>
             </div>
           ))}
@@ -207,6 +270,98 @@ export default function ProductsPage() {
             onClick={handleDelete}
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={!!editTarget}
+        onClose={() => setEditTarget(null)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundColor: "#000",
+              color: "#fff",
+            },
+          },
+        }}
+      >
+        <DialogTitle>Edit Product</DialogTitle>
+
+        <DialogContent className="space-y-4 pt-2">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium">Name</label>
+            <input
+              value={editForm.name}
+              onChange={(e) =>
+                setEditForm({ ...editForm, name: e.target.value })
+              }
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          {/* Barcode */}
+          <div>
+            <label className="block text-sm font-medium">Barcode</label>
+            <input
+              value={editForm.barcode}
+              onChange={(e) =>
+                setEditForm({ ...editForm, barcode: e.target.value })
+              }
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          {/* Unit */}
+          <div>
+            <label className="block text-sm font-medium">Unit</label>
+            <select
+              value={editForm.unit}
+              onChange={(e) =>
+                setEditForm({ ...editForm, unit: e.target.value })
+              }
+              className="w-full border p-2 rounded bg-black"
+            >
+              <option value="oz">Ounces (oz)</option>
+              <option value="pcs">Pieces (pcs)</option>
+            </select>
+          </div>
+
+          {/* Unit Cost */}
+          <div>
+            <label className="block text-sm font-medium">Unit Cost</label>
+            <input
+              type="number"
+              step="0.01"
+              value={editForm.unit_cost}
+              onChange={(e) =>
+                setEditForm({ ...editForm, unit_cost: e.target.value })
+              }
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          {/* Stock Quantity (disabled) */}
+          <Tooltip title="To change quantity, use the Replenish Inventory page">
+            <div>
+              <label className="block text-sm font-medium">
+                Stock Quantity
+              </label>
+              <input
+                value={`${editTarget?.stock_quantity} ${editTarget?.unit}`}
+                disabled
+                className="w-full border p-2 rounded bg-gray-100 text-gray-500 cursor-not-allowed"
+              />
+            </div>
+          </Tooltip>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setEditTarget(null)}>Cancel</Button>
+          <Button variant="contained" onClick={handleEditSave}>
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
