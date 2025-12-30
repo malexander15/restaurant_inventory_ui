@@ -79,9 +79,10 @@ export default function RecipesPage() {
                           key={ri.id}
                           className="text-sm text-gray-700 flex justify-between"
                         >
-                          <span className="text-gray-400">{ri.ingredient.name}</span>
+                          <span className="text-gray-400">
+                            {ri.ingredient?.name ?? "Missing Ingredient"}</span>
                           <span className="text-gray-500">
-                            {ri.quantity} {ri.ingredient.unit}
+                            {ri.quantity} {ri.ingredient?.unit ?? ""}
                           </span>
                         </li>
                       ))}
