@@ -40,7 +40,9 @@ export default function NewRecipePage() {
     is_prepped: false,
   });
   const [ingredientOptions, setIngredientOptions] = useState<IngredientOption[]>([]);
-  const [selectedIngredients, setSelectedIngredients] = useState<IngredientOption[]>([]);
+  const [selectedIngredients, setSelectedIngredients] =
+  useState<string[]>([]);
+
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -84,8 +86,8 @@ export default function NewRecipePage() {
       const recipe = await recipeRes.json();
 
       // 2️⃣ Create recipe ingredients
-      for (const ingredient of selectedIngredients) {
-        const key = `${ingredient.ingredientType}-${ingredient.id}`;
+      for (const key of selectedIngredients) {
+        const [ingredientType, id] = key.split("-");
 
         await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipe.id}/recipe_ingredients`,
@@ -94,8 +96,8 @@ export default function NewRecipePage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               recipe_ingredient: {
-                ingredient_id: ingredient.id,
-                ingredient_type: ingredient.ingredientType,
+                ingredient_id: Number(id),
+                ingredient_type: ingredientType,
                 quantity: quantities[key],
               },
             }),
@@ -227,29 +229,33 @@ export default function NewRecipePage() {
           </label>
 
           <FormControl fullWidth>
-            <InputLabel>Select Ingredients</InputLabel>     
+            <InputLabel sx={{ color: "white" }}>
+              Select Ingredients
+            </InputLabel>     
             <Select
               multiple
               value={selectedIngredients}
-              className="bg-[#262626]"
+              className="bg-[#262626] text-white"
               onChange={(e) =>
-                setSelectedIngredients(e.target.value as IngredientOption[])
+                setSelectedIngredients(e.target.value as string[])
               }
-              input={<OutlinedInput label="Select Ingredients" />}
+              input={<OutlinedInput sx={{ color: "white" }} label="Select Ingredients" />}
               renderValue={(selected) =>
-                selected.map((i) => i.name).join(", ")
+                selected
+                  .map((key) => {
+                    const opt = ingredientOptions.find(
+                      (o) => `${o.ingredientType}-${o.id}` === key
+                    );
+                    return opt?.name;
+                  })
+                  .join(", ")
               }
             >
               {ingredientOptions.map((option) => {
                 const key = `${option.ingredientType}-${option.id}`;
-                const checked = selectedIngredients.some(
-                  (i) =>
-                    i.id === option.id &&
-                    i.ingredientType === option.ingredientType
-                );
-
+                const checked = selectedIngredients.includes(key);
                 return (
-                  <MenuItem key={key} value={option}>
+                  <MenuItem key={key} value={key}>
                     <Checkbox checked={checked} />
                     <ListItemText
                       primary={option.name}
@@ -263,8 +269,12 @@ export default function NewRecipePage() {
                 );
               })}
             </Select>
-            {selectedIngredients.map((ingredient) => {
-              const key = `${ingredient.ingredientType}-${ingredient.id}`;
+            {selectedIngredients.map((key) => {
+              const ingredient = ingredientOptions.find(
+                (o) => `${o.ingredientType}-${o.id}` === key
+              );
+
+              if (!ingredient) return null;
 
               return (
                 <div key={key} className="flex items-center gap-3 mt-2">

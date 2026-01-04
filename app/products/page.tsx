@@ -219,6 +219,7 @@ export default function ProductsPage() {
                 <div className="flex items-center gap-2">
                   <EditIcon
                     className="cursor-pointer text-blue-400 hover:text-blue-300"
+                    sx={{ fontSize: '.9rem' }}
                     onClick={() => {
                       setEditTarget(product);
                       setEditForm({
@@ -231,6 +232,7 @@ export default function ProductsPage() {
                   />
                   <HighlightOffIcon
                     className="cursor-pointer text-red-500 hover:text-red-400"
+                    sx={{ fontSize: '.9rem' }}
                     onClick={() => setDeleteTarget(product)}
                   />
                 </div>
