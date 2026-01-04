@@ -62,7 +62,14 @@ export default function RecipesPage() {
     const updated = await res.json();
 
     setRecipes((prev) =>
-      prev.map((r) => (r.id === updated.id ? updated : r))
+      prev.map((r) =>
+        r.id === updated.id
+          ? {
+              ...r,        // keep recipe_ingredients
+              ...updated,  // overwrite name / recipe_type
+            }
+          : r
+      )
     );
 
     setEditTarget(null);
@@ -286,7 +293,7 @@ export default function RecipesPage() {
                   </div>
 
                   {/* Ingredient list */}
-                  {recipe.recipe_ingredients.length === 0 ? (
+                  {!recipe.recipe_ingredients ||recipe.recipe_ingredients.length === 0 ? (
                     <div className="text-sm text-gray-500">
                       No ingredients yet
                     </div>
