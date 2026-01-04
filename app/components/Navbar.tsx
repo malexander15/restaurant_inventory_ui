@@ -1,16 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Navbar() {
   return (
     <nav className="border-b bg-black">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex gap-8">
-        <Link
-          href="/"
-          className="text-lg font-bold tracking-tight hover:opacity-80 transition"
-        >
-          iStock
+      <div className="max-w-1xl mx-auto px-6 py-4 flex gap-8">
+        <Link href="/" className="hover:opacity-80 transition">
+          <Image
+            src="/iStockLogo.svg"
+            alt="iStock"
+            width={120}
+            height={32}
+            className="h-6 w-auto"
+            priority
+          />
         </Link>
         {/* Products */}
         <div className="relative group">
