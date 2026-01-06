@@ -2,16 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FormControl,
-  Snackbar,
-  Alert,
-  Select,
-  MenuItem,
-  OutlinedInput,
-  Checkbox,
-  ListItemText,
-} from "@mui/material";
+import AppInput from "@/app/components/ui/AppInput";
+import { AppSelect } from "@/app/components/ui/AppSelect";
+import { FormControl, Snackbar, Alert } from "@mui/material";
 
 type Product = {
   id: number;
@@ -124,40 +117,21 @@ export default function ReplenishInventoryPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4 border rounded p-4">
         <FormControl fullWidth>
-          <Select
-            multiple
+          <AppSelect<number>
+            label="Select Products"
+            options={products.map((p) => ({
+              label: p.name,
+              value: p.id,
+            }))}
             value={selectedProductIds}
-            onChange={(e) =>
-              setSelectedProductIds(e.target.value as number[])
+            onChange={(val) =>
+              setSelectedProductIds(
+                Array.isArray(val) ? val : [val]
+              )
             }
-            input={<OutlinedInput label="Products" />}
-            renderValue={(selected) =>
-              selected.map((id) => products.find((p) => p.id === id)?.name).join(", ")
-            }
-            className="bg-[#a8a5a5ff] text-white"
-          >
-            {products.map((product) => (
-              <MenuItem
-                key={product.id}
-                value={product.id}   // ✅ number, NOT Product
-                sx={{
-                  backgroundColor: "#3d3b3bff",
-                  color: "white",
-                  "&.Mui-selected": { backgroundColor: "#3d3b3bff" },
-                  "&.Mui-selected:hover": { backgroundColor: "#807c7cff" },
-                  "&:hover": { backgroundColor: "#807c7cff" },
-                }}
-              >
-                <Checkbox
-                  checked={selectedProductIds.includes(product.id)}
-                />
-                <ListItemText
-                  primary={product.name}
-                  secondary={`Unit: ${product.unit}`}
-                />
-              </MenuItem>
-            ))}
-          </Select>
+            multiple
+            checkbox
+          />
         </FormControl>
 
         {selectedProductIds.map((productId) => {
@@ -165,24 +139,22 @@ export default function ReplenishInventoryPage() {
           if (!product) return null;
 
           return (
-            <div key={product.id} className="flex items-center gap-3 mt-2">
-              <span className="w-40 text-sm">{product.name}</span>
-
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder={product.unit}
-                value={quantities[product.id] || ""}
-                onChange={(e) =>
-                  setQuantities({
-                    ...quantities,
-                    [product.id]: Number(e.target.value),
-                  })
-                }
-                className="w-24 border rounded px-2 py-1 text-sm bg-black text-white"
-              />
-            </div>
+            <div key={product.id} className="grid place-content-center items-center justify-center gap-3 mt-4">
+                <AppInput
+                  label={product.name}
+                  name={`quantity_${product.id}`}
+                  type="number"
+                  placeholder={product.unit}
+                  value={quantities[product.id] || ""}
+                  size="small"
+                  onChange={(val) =>
+                    setQuantities({
+                      ...quantities,
+                      [product.id]: Number(val),
+                    })
+                  }
+                />
+              </div>
           );
         })}
 

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {Select} from "@mui/material";
-import ProductsPage from '../page';
+import { AppSelect } from '@/app/components/ui/AppSelect';
+import AppInput from '@/app/components/ui/AppInput';
 type ProductForm = {
   name: string;
   barcode: string;
@@ -15,7 +15,10 @@ type ProductForm = {
 // New Product Page Component
 export default function NewProductPage() {
   const router = useRouter();
-
+  const unitOptions = [
+    { value: "oz", label: "Ounces (oz)" },
+    { value: "pcs", label: "Pieces (pcs)" },
+  ];
   const [form, setForm] = useState<ProductForm>({
     name: '',
     barcode: '',
@@ -92,61 +95,54 @@ export default function NewProductPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block font-medium">Name</label>
-          <input
+          <AppInput
+            label="Name"
             name="name"
             value={form.name}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
+            onChange={(val) => setForm({ ...form, name: val })}
             required
           />
         </div>
 
         <div>
-          <label className="block font-medium">Barcode</label>
-          <input
+          <AppInput
+            label="Barcode"
             name="barcode"
             value={form.barcode}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
+            onChange={(val) => setForm({ ...form, barcode: val })}
           />
         </div>
 
         <div>
-          <label className="block font-medium">Unit</label>
-          <select
-            name="unit"
+          <AppSelect
+            label='Unit'
+            options={unitOptions}
             value={form.unit}
-            onChange={handleChange}
-            className="w-full border p-2 rounded bg-black"
-          >
-            <option value="oz">Ounces (oz)</option>
-            <option value="pcs">Pieces (pcs)</option>
-          </select>
+            onChange={(val) => 
+              setForm({ ...form, unit: val as "oz" | "pcs"})
+            }
+          />
         </div>
 
         <div>
-          <label className="block font-medium">Stock Quantity</label>
-          <input
+          <AppInput
+            label="Stock Quantity"
             name="stock_quantity"
             type="number"
-            step="0.01"
             value={form.stock_quantity}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
+            onChange={(val) => setForm({ ...form, stock_quantity: val })}
             required
           />
         </div>
 
         <div>
-          <label className="block font-medium">Unit Cost</label>
-          <input
+          <AppInput
+            label="Unit Cost"
             name="unit_cost"
             type="number"
-            step="0.01"
+            step={0.01}
             value={form.unit_cost}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
+            onChange={(val) => setForm({ ...form, unit_cost: val })}
             required
           />
         </div>
