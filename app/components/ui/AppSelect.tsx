@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { SelectOption } from "./types";
 
-type AppSelectProps<T> = {
+type AppSelectProps<T extends string | number = string> = {
   label: string;
   options: SelectOption<T>[];
   value: T | T[];
@@ -24,7 +24,7 @@ type AppSelectProps<T> = {
   fullWidth?: boolean;
 };
 
-export function AppSelect<T>({
+export function AppSelect<T extends string | number = string  >({
   label,
   options,
   value,

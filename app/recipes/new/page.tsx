@@ -6,13 +6,11 @@ import Link from "next/link";
 import {
   FormControl,
   InputLabel,
-  Select,
-  MenuItem,
-  Checkbox,
-  ListItemText,
-  OutlinedInput,
 } from "@mui/material";
-
+import AppInput from "@/app/components/ui/AppInput";
+import AppCheckbox from "@/app/components/ui/AppCheckbox";
+import { AppSelect } from "@/app/components/ui/AppSelect";
+import AppButton from "@/app/components/ui/AppButton";
 
 type Product = {
   id: number;
@@ -186,16 +184,14 @@ export default function NewRecipePage() {
           <label className="block text-sm font-medium mb-1">
             Recipe Name
           </label>
-          <input
+          <AppInput
+            type="text"
             name="name"
+            label=""
             value={form.name}
-            onChange={handleChange}
+            onChange={(val: string) => setForm({ ...form, name: val })}
             placeholder="e.g. Quesadilla"
-            className="
-              w-full border rounded px-3 py-2
-              focus:outline-none focus:ring-2 focus:ring-gray-300
-            "
-          />
+          /> 
         </div>
 
         <div>
@@ -203,12 +199,19 @@ export default function NewRecipePage() {
             Recipe Type
           </label>
           <div className="flex items-start gap-3">
-            <input
+            {/* <input
               type="checkbox"
               name="is_prepped"
               checked={form.is_prepped}
               onChange={handleChange}
               className="mt-1"
+            /> */}
+            <AppCheckbox
+              label=""
+              checked={form.is_prepped}
+              onChange={(checked: boolean) =>
+                setForm({ ...form, is_prepped: checked })
+              }
             />
 
             <div>
@@ -224,51 +227,27 @@ export default function NewRecipePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Ingredients
-          </label>
-
           <FormControl fullWidth>
             <InputLabel sx={{ color: "white" }}>
               Select Ingredients
             </InputLabel>     
-            <Select
+            <AppSelect
+              label="Select Ingredients"
               multiple
+              checkbox
               value={selectedIngredients}
-              className="bg-[#262626] text-white"
-              onChange={(e) =>
-                setSelectedIngredients(e.target.value as string[])
+              onChange={(vals: string | string[]) =>
+                setSelectedIngredients(Array.isArray(vals) ? vals : [vals])
               }
-              input={<OutlinedInput sx={{ color: "white" }} label="Select Ingredients" />}
-              renderValue={(selected) =>
-                selected
-                  .map((key) => {
-                    const opt = ingredientOptions.find(
-                      (o) => `${o.ingredientType}-${o.id}` === key
-                    );
-                    return opt?.name;
-                  })
-                  .join(", ")
-              }
-            >
-              {ingredientOptions.map((option) => {
-                const key = `${option.ingredientType}-${option.id}`;
-                const checked = selectedIngredients.includes(key);
-                return (
-                  <MenuItem key={key} value={key}>
-                    <Checkbox checked={checked} />
-                    <ListItemText
-                      primary={option.name}
-                      secondary={
-                        option.ingredientType === "Product"
-                          ? `Product (${option.unit})`
-                          : "Prepped Item"
-                      }
-                    />
-                  </MenuItem>
-                );
-              })}
-            </Select>
+              options={ingredientOptions.map((option) => ({
+                value: `${option.ingredientType}-${option.id}`,
+                label:
+                  option.ingredientType === "Product"
+                    ? `${option.name} (Product${option.unit ? ` - ${option.unit}` : ""})`
+                    : `${option.name} (Prepped Item)`,
+              }))}
+            />
+          
             {selectedIngredients.map((key) => {
               const ingredient = ingredientOptions.find(
                 (o) => `${o.ingredientType}-${o.id}` === key
@@ -279,20 +258,21 @@ export default function NewRecipePage() {
               return (
                 <div key={key} className="flex items-center gap-3 mt-2">
                   <span className="text-sm w-40">{ingredient.name}</span>
-
-                  <input
+                  <AppInput
+                    label=""
                     type="number"
-                    min="0"
-                    step="0.01"
+                    size="small"
+                    min={0}
+                    step={0.01}
                     placeholder={ingredient.unit ? ingredient.unit : "qty"}
                     value={quantities[key] || ""}
-                    onChange={(e) =>
+                    onChange={(val: string) =>
                       setQuantities({
                         ...quantities,
-                        [key]: Number(e.target.value),
+                        [key]: Number(val),
                       })
                     }
-                    className="w-24 border rounded px-2 py-1 text-sm"
+                    fullWidth={false}
                   />
                 </div>
               );
@@ -300,26 +280,14 @@ export default function NewRecipePage() {
           </FormControl>
         </div>
 
-
         {/* Actions */}
         <div className="flex items-center justify-between pt-4">
-          <Link
-            href="/recipes"
-            className="text-sm text-gray-600 hover:underline"
-          >
+          <AppButton variant="ghost">
+            <Link href="/recipes">
             Cancel
-          </Link>
-
-          <button
-            type="submit"
-            className="
-              px-4 py-2 border rounded
-              hover:bg-gray-100/10
-              transition
-            "
-          >
-            Create Recipe
-          </button>
+            </Link>
+          </AppButton>
+          <AppButton type="submit">Create Recipe</AppButton>
         </div>
       </form>
     </div>
