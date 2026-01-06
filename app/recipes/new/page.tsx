@@ -199,13 +199,6 @@ export default function NewRecipePage() {
             Recipe Type
           </label>
           <div className="flex items-start gap-3">
-            {/* <input
-              type="checkbox"
-              name="is_prepped"
-              checked={form.is_prepped}
-              onChange={handleChange}
-              className="mt-1"
-            /> */}
             <AppCheckbox
               label=""
               checked={form.is_prepped}
