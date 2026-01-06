@@ -121,7 +121,8 @@ export default function DepleteInventoryPage() {
 
                 <AppInput
                   type="number"
-                  label="Quantity"
+                  label="Qty"
+                  fullWidth={false}
                   size="small"
                   min={1}
                   placeholder="Qty"
