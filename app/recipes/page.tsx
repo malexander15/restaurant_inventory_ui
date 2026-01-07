@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import EditIcon from "@mui/icons-material/Edit";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import {
@@ -11,6 +12,10 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import AppInput from "../components/ui/AppInput";
+import AppButton from "../components/ui/AppButton";
+import AppAlert from "../components/ui/AppAlert";
+
 
 type Recipe = {
   id: number;
@@ -20,6 +25,17 @@ type Recipe = {
 };
 
 export default function RecipesPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [alert, setAlert] = useState<{
+  open: boolean;
+  message: string;
+  severity: "success" | "error";
+}>({
+  open: false,
+  message: "",
+  severity: "success",
+});
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [expandedRecipeId, setExpandedRecipeId] = useState<number | null>(null);
   const [editTarget, setEditTarget] = useState<Recipe | null>(null);
@@ -43,6 +59,16 @@ export default function RecipesPage() {
 
     loadRecipes();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("created") === "1") {
+      setAlert({
+        open: true,
+        severity: "success",
+        message: "Recipe saved successfully!",
+      });
+    }
+  }, [searchParams]);
 
   // For editing recipes
   async function handleEditSave() {
@@ -171,6 +197,15 @@ export default function RecipesPage() {
   return (
     // Main container
     <div className="max-w-3xl mx-auto p-6">
+      <AppAlert
+        open={alert.open}
+        severity={alert.severity}
+        message={alert.message}
+        onClose={() => {
+          setAlert({ ...alert, open: false });
+          router.replace("/recipes");
+        }}
+      />
       
       {/* Header & New Recipe Button */}
       <div className="flex items-center justify-between mb-6">
@@ -253,7 +288,7 @@ export default function RecipesPage() {
                   {/* Edit / Save / Cancel controls */}
                   <div className="flex justify-end">
                     {!isEditingIngredients ? (
-                      <button
+                      <AppButton
                         onClick={() => {
                           setIngredientDrafts(
                             recipe.recipe_ingredients.reduce(
@@ -266,28 +301,27 @@ export default function RecipesPage() {
                           );
                           setIsEditingIngredients(true);
                         }}
-                        className="text-xs px-3 py-1 border rounded hover:bg-gray-100/10"
+                        variant="secondary"
                       >
                         Edit Ingredients
-                      </button>
+                      </AppButton>
                     ) : (
                       <div className="flex gap-2">
-                        <button
+                        <AppButton
                           onClick={() => handleIngredientsSave(recipe)}
-                          className="text-xs px-3 py-1 border rounded text-green-400"
+                          variant="primary"
                         >
                           Save
-                        </button>
-
-                        <button
+                        </AppButton>
+                        <AppButton
                           onClick={() => {
+                            // No need to reset drafts here since we're deleting
                             setIsEditingIngredients(false);
-                            setIngredientDrafts({});
                           }}
-                          className="text-xs px-3 py-1 border rounded text-gray-400"
+                          variant="ghost"
                         >
                           Cancel
-                        </button>
+                        </AppButton>
                       </div>
                     )}
                   </div>
@@ -312,21 +346,25 @@ export default function RecipesPage() {
                           {/* Quantity */}
                           {isEditingIngredients ? (
                             <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                min="0.01"
-                                step="0.01"
+                              <AppInput
+                                type="text"
+                                label=""
+                                min={0.01}
+                                step={0.01}
+                                width={60}
+                                inputPadding="4px 6px"
+                                fullWidth={false}
                                 value={ingredientDrafts[ri.id] ?? ""}
-                                onChange={(e) =>
+                                onChange={(val) =>
                                   setIngredientDrafts({
                                     ...ingredientDrafts,
-                                    [ri.id]: e.target.value,
+                                    [ri.id]: val,
                                   })
                                 }
-                                className="w-24 border rounded px-2 py-1 bg-black text-white"
+                                size="small"
                               />
                               <span className="text-gray-500">
-                                {ri.ingredient?.unit ?? ""}
+                                {ri.ingredient?.unit ?? "qty"}
                               </span>
                             </div>
                           ) : (

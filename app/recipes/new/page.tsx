@@ -11,6 +11,8 @@ import AppInput from "@/app/components/ui/AppInput";
 import AppCheckbox from "@/app/components/ui/AppCheckbox";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
+import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
+import AppAlert from "@/app/components/ui/AppAlert";
 
 type Product = {
   id: number;
@@ -43,6 +45,10 @@ export default function NewRecipePage() {
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [errors, setErrors] = useState<string[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [errorAlert, setErrorAlert] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
 
   function handleChange(
   e: React.ChangeEvent<HTMLInputElement>
@@ -55,11 +61,11 @@ export default function NewRecipePage() {
   });
   }
 
+  async function handleConfirmSave() {
+    setSubmitting(true);
+    setErrorAlert(null);
 
-    async function handleSubmit(e: React.FormEvent) {
-      e.preventDefault();
-      setErrors([]);
-
+    try {
       // 1️⃣ Create recipe
       const recipeRes = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/recipes`,
@@ -69,7 +75,9 @@ export default function NewRecipePage() {
           body: JSON.stringify({
             recipe: {
               name: form.name,
-              recipe_type: form.is_prepped ? "prepped_item" : "menu_item",
+              recipe_type: form.is_prepped
+                ? "prepped_item"
+                : "menu_item",
             },
           }),
         }
@@ -77,8 +85,9 @@ export default function NewRecipePage() {
 
       if (!recipeRes.ok) {
         const data = await recipeRes.json();
-        setErrors(data.errors || ["Failed to create recipe"]);
-        return;
+        throw new Error(
+          data.errors?.[0] || "Failed to create recipe"
+        );
       }
 
       const recipe = await recipeRes.json();
@@ -87,7 +96,7 @@ export default function NewRecipePage() {
       for (const key of selectedIngredients) {
         const [ingredientType, id] = key.split("-");
 
-        await fetch(
+        const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipe.id}/recipe_ingredients`,
           {
             method: "POST",
@@ -101,11 +110,53 @@ export default function NewRecipePage() {
             }),
           }
         );
+
+        if (!res.ok) {
+          throw new Error("Failed to save ingredients");
+        }
       }
 
-      // 3️⃣ Done
-      router.push("/recipes");
+      // ✅ Success → redirect with URL alert
+      router.push("/recipes?created=1");
+    } catch (err: any) {
+      setErrorAlert(err.message);
+      setConfirmOpen(false);
+    } finally {
+      setSubmitting(false);
     }
+  }
+
+
+  function validate() {
+  if (!form.name.trim()) {
+    setErrorAlert("Recipe name is required");
+    return false;
+  }
+
+  if (selectedIngredients.length === 0) {
+    setErrorAlert("Please select at least one ingredient");
+    return false;
+  }
+
+  for (const key of selectedIngredients) {
+    if (!quantities[key] || quantities[key] <= 0) {
+      setErrorAlert("All ingredients must have a quantity");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorAlert(null);
+
+    if (!validate()) return;
+
+    setConfirmOpen(true);
+  }
+
 
 
   useEffect(() => {
@@ -157,6 +208,14 @@ export default function NewRecipePage() {
     
     <div className="max-w-xl mx-auto p-6">
       {/* Header */}
+      {errorAlert && (
+        <AppAlert
+          open={true}
+          severity="error"
+          message={errorAlert}
+          onClose={() => setErrorAlert(null)}
+        />
+      )}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-1">New Recipe</h1>
         <p className="text-sm text-gray-500">
@@ -220,10 +279,7 @@ export default function NewRecipePage() {
         </div>
 
         <div>
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: "white" }}>
-              Select Ingredients
-            </InputLabel>     
+          <FormControl fullWidth>  
             <AppSelect
               label="Select Ingredients"
               multiple
@@ -283,6 +339,14 @@ export default function NewRecipePage() {
           <AppButton type="submit">Create Recipe</AppButton>
         </div>
       </form>
+      <ConfirmDialog
+        open={confirmOpen}
+        title={`Save "${form.name}"`}
+        description="This will create the recipe and its ingredients."
+        confirmText="Save Recipe"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmSave}
+      />
     </div>
   );
 }

@@ -1,30 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
-   Snackbar, 
-   Alert,
    Dialog,
    DialogTitle,
    DialogContent,
    DialogActions,
-   Button,
    Tooltip,
-   Paper
   } 
 from "@mui/material";
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import EditIcon from "@mui/icons-material/Edit";
+import AppAlert from "@/app/components/ui/AppAlert";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
+import AppButton from "../components/ui/AppButton";
+import AppInput from "../components/ui/AppInput";
+import { AppSelect } from "../components/ui/AppSelect";
 
 type Product = {
   id: number
   name: string
-  unit: string
+  unit: "oz" | "pcs"
   stock_quantity: string
   unit_cost: string
   barcode?: string | null
 }
+
+type EditProductForm = {
+  name: string;
+  barcode: string;
+  unit: "oz" | "pcs";
+  unit_cost: string;
+};
+
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -40,12 +49,13 @@ export default function ProductsPage() {
     severity: "success",
   });
   const [editTarget, setEditTarget] = useState<Product | null>(null);
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<EditProductForm>({
     name: "",
     barcode: "",
     unit: "oz",
     unit_cost: "",
   });
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -72,6 +82,13 @@ export default function ProductsPage() {
         message: "Product created successfully!",
       });
     }
+    if (searchParams.get("depleted") === "1") {
+    setSnackbar({
+      open: true,
+      severity: "success",
+      message: "Inventory successfully depleted!",
+    });
+  }
   }, [searchParams]);
 
 
@@ -181,20 +198,17 @@ export default function ProductsPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <Snackbar
+      <AppAlert
         open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        severity={snackbar.severity}
+        message={snackbar.message}
+        onClose={() => {
+          setSnackbar({ ...snackbar, open: false });
+
+          // Optional but recommended: clear URL params
+          router.replace("/products");
+        }}
+      />
       <h1 className="text-3xl font-bold mb-6">Products</h1>
 
       {products.length === 0 ? (
@@ -247,34 +261,15 @@ export default function ProductsPage() {
           ))}
         </div>
       )}
-      <Dialog
+      <ConfirmDialog
         open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-      >
-        <DialogTitle>Delete Product</DialogTitle>
+        title="Delete Product"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
 
-        <DialogContent>
-          <p className="text-sm text-gray-600">
-            Are you sure you want to delete{" "}
-            <strong>{deleteTarget?.name}</strong>?
-            <br />
-            This action cannot be undone.
-          </p>
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)}>
-            Cancel
-          </Button>
-
-          <Button
-            color="error"
-            onClick={handleDelete}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
       <Dialog
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
@@ -294,78 +289,85 @@ export default function ProductsPage() {
         <DialogContent className="space-y-4 pt-2">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium">Name</label>
-            <input
+            <AppInput
+              label="Name"
               value={editForm.name}
-              onChange={(e) =>
-                setEditForm({ ...editForm, name: e.target.value })
+              onChange={(val) =>
+                setEditForm({ ...editForm, name: val })
               }
-              className="w-full border p-2 rounded"
             />
           </div>
 
           {/* Barcode */}
           <div>
-            <label className="block text-sm font-medium">Barcode</label>
-            <input
+            <AppInput
+              label="Barcode"
               value={editForm.barcode}
-              onChange={(e) =>
-                setEditForm({ ...editForm, barcode: e.target.value })
+              onChange={(val) =>
+                setEditForm({ ...editForm, barcode: val })
               }
-              className="w-full border p-2 rounded"
             />
           </div>
 
           {/* Unit */}
           <div>
-            <label className="block text-sm font-medium">Unit</label>
-            <select
+            <AppSelect<"oz" | "pcs">
+              label="Unit"
               value={editForm.unit}
-              onChange={(e) =>
-                setEditForm({ ...editForm, unit: e.target.value })
+              onChange={(val) =>
+                setEditForm({ ...editForm, unit: val as "oz" | "pcs" })
               }
-              className="w-full border p-2 rounded bg-black"
-            >
-              <option value="oz">Ounces (oz)</option>
-              <option value="pcs">Pieces (pcs)</option>
-            </select>
+              options={[
+                { label: "Ounces (oz)", value: "oz" },
+                { label: "Pieces (pcs)", value: "pcs" },
+              ]}
+            />
+
           </div>
 
           {/* Unit Cost */}
           <div>
-            <label className="block text-sm font-medium">Unit Cost</label>
-            <input
+            <AppInput
               type="number"
-              step="0.01"
+              label="Unit Cost"
+              step={0.01}
               value={editForm.unit_cost}
-              onChange={(e) =>
-                setEditForm({ ...editForm, unit_cost: e.target.value })
+              onChange={(val) =>
+                setEditForm({ ...editForm, unit_cost: val })
               }
-              className="w-full border p-2 rounded"
             />
           </div>
 
           {/* Stock Quantity (disabled) */}
           <Tooltip title="To change quantity, use the Replenish Inventory page">
             <div>
-              <label className="block text-sm font-medium">
+              {/* <label className="block text-sm font-medium">
                 Stock Quantity
-              </label>
-              <input
-                value={`${editTarget?.stock_quantity} ${editTarget?.unit}`}
+              </label> */}
+              <AppInput
+                type="number"
+                label="Stock Quantity"
+                value={editTarget?.stock_quantity || ""}
+                onChange={() => {}}
                 disabled
-                className="w-full border p-2 rounded bg-gray-100 text-gray-500 cursor-not-allowed"
               />
             </div>
           </Tooltip>
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setEditTarget(null)}>Cancel</Button>
-          <Button variant="contained" onClick={handleEditSave}>
+          <AppButton
+            variant="secondary"
+            onClick={() => setEditTarget(null)}
+          >
+            Cancel
+          </AppButton>
+
+          <AppButton onClick={handleEditSave}>
             Save Changes
-          </Button>
+          </AppButton>
         </DialogActions>
+
       </Dialog>
     </div>
   )

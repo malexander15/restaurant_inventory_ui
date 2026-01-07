@@ -6,6 +6,7 @@ import { FormControl } from "@mui/material";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
 import AppInput from "@/app/components/ui/AppInput";
+import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 
 type Recipe = {
   id: number;
@@ -15,6 +16,8 @@ type Recipe = {
 export default function DepleteInventoryPage() {
   const router = useRouter();
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<number[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
@@ -37,24 +40,20 @@ export default function DepleteInventoryPage() {
     loadMenuItems();
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
 
-    if (selectedRecipes.length === 0) {
-      setError("Please select at least one menu item");
-      return;
-    }
+    if (!validate()) return;
 
-    for (const recipe of selectedRecipes) {
-      if (!quantities[recipe.id] || quantities[recipe.id] <= 0) {
-        setError(`Please enter a quantity for ${recipe.name}`);
-        return;
-      }
-    }
+    setConfirmOpen(true);
+  }
 
+  async function handleConfirmDeplete() {
+  setSubmitting(true);
+  setError(null);
 
+  try {
     for (const recipe of selectedRecipes) {
       const qty = quantities[recipe.id];
 
@@ -69,15 +68,38 @@ export default function DepleteInventoryPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || `Failed to deplete ${recipe.name}`);
-        return;
+        throw new Error(
+          data.error || `Failed to deplete ${recipe.name}`
+        );
       }
     }
 
-    setSuccess("Inventory depleted successfully");
-    setSelectedRecipeIds([]);
-    setQuantities({});
+    // ✅ success → redirect
+    router.push("/products/?depleted=1");
+  } catch (err: any) {
+    setError(err.message);
+    setConfirmOpen(false);
+  } finally {
+    setSubmitting(false);
   }
+}
+
+
+  function validate() {
+  if (selectedRecipes.length === 0) {
+    setError("Please select at least one menu item");
+    return false;
+  }
+
+  for (const recipe of selectedRecipes) {
+    if (!quantities[recipe.id] || quantities[recipe.id] <= 0) {
+      setError(`Please enter a quantity for ${recipe.name}`);
+      return false;
+    }
+  }
+
+  return true;
+}
 
 
   return (
@@ -142,10 +164,19 @@ export default function DepleteInventoryPage() {
           type="submit" 
           variant="danger"
           fullWidth={true}
+          disabled={submitting}
         >
           Deplete Inventory
         </AppButton>
       </form>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Confirm Inventory Depletion"
+        description="This will permanently reduce inventory based on the selected menu items. This action cannot be undone."
+        confirmText="Deplete Inventory"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDeplete}
+      />
     </div>
   );
 }

@@ -4,6 +4,9 @@ import * as React from "react";
 import { TextField } from "@mui/material";
 
 type AppInputProps = {
+  inputPadding?: string;
+  width?: number | string;
+  height?: number | string;
   label: string;
   value: string | number;
   onChange: (value: string) => void;
@@ -33,6 +36,8 @@ export default function AppInput({
   value,
   onChange,
   name,
+  width,
+  height,
   type = "text",
   placeholder,
   size = "medium",
@@ -44,6 +49,7 @@ export default function AppInput({
   max,
   step,
   fullWidth = true,
+  inputPadding,
 }: AppInputProps) {
   return (
     <TextField
@@ -72,6 +78,9 @@ export default function AppInput({
         // Label colors
         "& .MuiInputLabel-root": { color: "white" },
         "& .MuiInputLabel-root.Mui-focused": { color: "white" },
+        "& .MuiInputLabel-root.Mui-disabled": { color: "#9ca3af" }, // gray-400
+        width: fullWidth ? undefined : width,
+        height: height,
 
         // Input background + text
         "& .MuiOutlinedInput-root": {
@@ -81,6 +90,10 @@ export default function AppInput({
           "& input::placeholder": {
             color: "#9ca3af", // gray-400
             opacity: 1,
+          },
+
+          "& .MuiOutlinedInput-input": {
+            padding: inputPadding ?? "10.5px 14px",
           },
 
           // Border
