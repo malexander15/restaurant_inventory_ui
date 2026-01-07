@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import CalculateIcon from "@mui/icons-material/Calculate";
+import { Tooltip } from "@mui/material";
 
 export default function Navbar() {
   return (
@@ -92,6 +94,20 @@ export default function Navbar() {
             </Link>
           </div>
         </div>
+        {/* Pricing Calculator */}
+        <div className="h-5 w-px bg-gray-700 mx-2" />
+          <Tooltip title="Calculate Menu Pricing Cost" arrow>
+          <Link
+            href="/pricing-calculator"
+            className="
+              flex items-center justify-center
+              text-gray-300 hover:text-white
+              transition
+            "
+          >
+            <CalculateIcon fontSize="medium" />
+          </Link>
+        </Tooltip>
       </div>
     </nav>
   );
