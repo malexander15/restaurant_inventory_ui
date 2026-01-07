@@ -9,10 +9,10 @@ export default function Navbar() {
       <div className="max-w-1xl mx-auto px-6 py-4 flex gap-8">
         <Link href="/" className="hover:opacity-80 transition">
           <Image
-            src="/iStockLogo.svg"
+            src="/iStockLogo.png"
             alt="iStock"
-            width={120}
-            height={32}
+            width={80}
+            height={80}
             className="h-6 w-auto"
             priority
           />
