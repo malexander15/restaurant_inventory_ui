@@ -55,6 +55,7 @@ export default function AppInput({
     <TextField
       fullWidth={fullWidth}
       label={label}
+      margin="dense"
       name={name}
       type={type}
       value={value}

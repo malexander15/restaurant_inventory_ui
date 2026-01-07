@@ -15,6 +15,9 @@ import {
 import AppInput from "../components/ui/AppInput";
 import AppButton from "../components/ui/AppButton";
 import AppAlert from "../components/ui/AppAlert";
+import App from "next/app";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
+import { AppSelect } from "../components/ui/AppSelect";
 
 
 type Recipe = {
@@ -58,7 +61,7 @@ export default function RecipesPage() {
     }
 
     loadRecipes();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get("created") === "1") {
@@ -68,64 +71,81 @@ export default function RecipesPage() {
         message: "Recipe saved successfully!",
       });
     }
+    if (searchParams.get("updated") === "1") {
+      setAlert({
+        open: true,
+        severity: "success",
+        message: "Recipe updated successfully!",
+      });
+    }
+    if (searchParams.get("deleted") === "1") {
+      setAlert({
+        open: true,
+        severity: "success",
+        message: "Recipe deleted successfully!",
+      });
+    }
   }, [searchParams]);
 
   // For editing recipes
   async function handleEditSave() {
     if (!editTarget) return;
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/recipes/${editTarget.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipe: editForm }),
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/recipes/${editTarget.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recipe: editForm }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Update failed");
       }
-    );
 
-    if (!res.ok) return;
+      setEditTarget(null);
 
-    const updated = await res.json();
-
-    setRecipes((prev) =>
-      prev.map((r) =>
-        r.id === updated.id
-          ? {
-              ...r,        // keep recipe_ingredients
-              ...updated,  // overwrite name / recipe_type
-            }
-          : r
-      )
-    );
-
-    setEditTarget(null);
+      // ✅ Redirect → triggers alert + closes dialog implicitly
+      router.push("/recipes?updated=1");
+    } catch (err) {
+      setAlert({
+        open: true,
+        severity: "error",
+        message: "Failed to update recipe",
+      });
+    }
   }
+
 
   // For deleting recipes
   async function handleDeleteConfirm() {
-  if (!deleteTarget) return;
+    if (!deleteTarget) return;
 
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/recipes/${deleteTarget.id}`,
-      { method: "DELETE" }
-    );
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/recipes/${deleteTarget.id}`,
+        { method: "DELETE" }
+      );
 
-    if (!res.ok) {
-      throw new Error("Delete failed");
+      if (!res.ok) {
+        throw new Error("Delete failed");
+      }
+
+      // ✅ Redirect → page refetches
+      router.push("/recipes?deleted=1");
+    } catch (err) {
+      setAlert({
+        open: true,
+        severity: "error",
+        message: "Failed to delete recipe",
+      });
+    } finally {
+      setDeleteTarget(null);
     }
-
-    // Remove from UI
-    setRecipes((prev) =>
-      prev.filter((r) => r.id !== deleteTarget.id)
-    );
-  } catch (err) {
-    console.error(err);
-    // later: snackbar error
-  } finally {
-    setDeleteTarget(null);
   }
-}
+
 
   // For editing ingredient quantities
   async function handleIngredientsSave(recipe: Recipe) {
@@ -384,93 +404,91 @@ export default function RecipesPage() {
       </div>
 
       {/* Edit & Delete Dialogs */}
-      <Dialog
+      <ConfirmDialog
         open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-      >
-        <DialogTitle>Delete Recipe</DialogTitle>
-
-        <DialogContent>
-          <p className="text-sm text-gray-600">
-            Are you sure you want to delete{" "}
-            <strong>{deleteTarget?.name}</strong>?
-            <br />
-            This action cannot be undone.
-          </p>
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)}>
-            Cancel
-          </Button>
-
-          <Button
-            color="error"
-            onClick={handleDeleteConfirm}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
+        title="Delete Recipe"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+      />
       <Dialog
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         maxWidth="sm"
         fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundColor: "#262626",
+              color: "white",
+              border: "1px solid #333",
+            },
+          },
+        }}
       >
-        <DialogTitle>Edit Recipe</DialogTitle>
+        <DialogTitle
+          sx={{
+            fontWeight: 600,
+            fontSize: "1.25rem",
+            marginBottom: 2,
+            borderBottom: "1px solid #333",
+            pb: 1.5,
+          }}
+        >
+          Edit Recipe
+        </DialogTitle>
 
-        <DialogContent className="space-y-4 pt-2">
+        <DialogContent
+          sx={{
+            pt: 3,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2.5,
+          }}
+        >
           {/* Recipe Name */}
           <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Recipe Name
-            </label>
-            <input
+            <AppInput
               value={editForm.name}
-              onChange={(e) =>
-                setEditForm({ ...editForm, name: e.target.value })
+              label="Recipe Name"
+              onChange={(val) =>
+                setEditForm({ ...editForm, name: val })
               }
-              className="w-full border p-2 rounded bg-white text-black"
+              fullWidth={true}
             />
           </div>
 
           {/* Recipe Type */}
           <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Recipe Type
-            </label>
-
-            <select
+            <AppSelect
               value={editForm.recipe_type}
-              onChange={(e) =>
+              label="Menu Item"
+              onChange={(val) =>
                 setEditForm({
                   ...editForm,
-                  recipe_type: e.target.value as
-                    | "menu_item"
-                    | "prepped_item",
+                  recipe_type: val as "menu_item" | "prepped_item",
                 })
               }
-              className="w-full border p-2 rounded bg-white text-black"
-            >
-              <option value="menu_item">Menu Item</option>
-              <option value="prepped_item">Prepped Item</option>
-            </select>
+              options={[
+                { value: "menu_item", label: "Menu Item" },
+                { value: "prepped_item", label: "Prepped Item" },
+              ]}
+            />
           </div>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => setEditTarget(null)}>
-            Cancel
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={handleEditSave}
+        <DialogActions
+          sx={{ p: 2, borderTop: "1px solid #333" }}>
+          <AppButton
+            variant="ghost"
+            onClick={() => setEditTarget(null)}
           >
-            Save Changes
-          </Button>
+            Cancel
+          </AppButton>
+          <AppButton variant="primary" onClick={handleEditSave}>
+            Save
+          </AppButton>
         </DialogActions>
       </Dialog>
     </div>
