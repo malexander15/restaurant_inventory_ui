@@ -10,12 +10,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
 } from "@mui/material";
 import AppInput from "../components/ui/AppInput";
 import AppButton from "../components/ui/AppButton";
 import AppAlert from "../components/ui/AppAlert";
-import App from "next/app";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { AppSelect } from "../components/ui/AppSelect";
 
@@ -62,6 +60,11 @@ export default function RecipesPage() {
 
     loadRecipes();
   }, [searchParams]);
+
+  useEffect(() => {
+    setIsEditingIngredients(false);
+    setIngredientDrafts({});
+  }, [expandedRecipeId]);
 
   useEffect(() => {
     if (searchParams.get("created") === "1") {
