@@ -62,6 +62,7 @@ export default function PricingCalculatorPage() {
       <Stack spacing={3}>
         <AppInput
           label="Menu Item Name (optional)"
+          disabled={true}
           inputPadding="1rem"
           value=""
           onChange={() => {}}
@@ -159,7 +160,12 @@ export default function PricingCalculatorPage() {
 
       {/* Actions */}
       <div className="flex justify-end">
-        <AppButton variant="ghost">
+        <AppButton variant="ghost" onClick={() => {
+          setSelectedProductIds([]);
+          setQuantities({});
+          setMarginLow(3);
+          setMarginHigh(4);
+        }}>
           Reset
         </AppButton>
       </div>
