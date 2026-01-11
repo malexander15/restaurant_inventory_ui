@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
    Dialog,
    DialogTitle,
@@ -272,11 +273,13 @@ const filteredProducts = products
         }}
       />
       <div className="flex flex-col gap-4 mb-6">
-        <div className="flex items-center justify-between mb-6 gap-4">
+        {/* Top row: header + search + filters */}
+        <div className="flex items-center justify-between gap-4">
           {/* Left: Title */}
           <h1 className="text-3xl font-bold whitespace-nowrap">
             Products
           </h1>
+
           <Popover
             open={filtersOpen}
             anchorEl={filterButtonRef.current}
@@ -364,7 +367,7 @@ const filteredProducts = products
           <div className="flex items-center gap-3 flex-1 justify-end">
             <div className="max-w-xs w-full">
               <AppInput
-              label=""
+                label=""
                 placeholder="Search products…"
                 value={search}
                 onChange={(val) => setSearch(val)}
@@ -376,14 +379,23 @@ const filteredProducts = products
               ref={filterButtonRef}
               variant="ghost"
               startIcon={<FilterListIcon />}
-               onClick={() => setFiltersOpen(true)}
+              onClick={() => setFiltersOpen(true)}
             >
               Filters
             </AppButton>
           </div>
         </div>
-      </div>
 
+        {/* Second row: New Product button */}
+        <div>
+          <Link
+            href="/products/new"
+            className="inline-block text-sm px-4 py-2 border rounded hover:bg-gray-100/10"
+          >
+            + New Product
+          </Link>
+        </div>
+      </div>
 
       {products.length === 0 ? (
         <p className="text-gray-500">No products found.</p>
