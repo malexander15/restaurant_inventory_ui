@@ -228,22 +228,22 @@ export default function RecipesPage() {
     );
   }
 
-  const filteredRecipes = recipes.filter((recipe) => {
-    // Search
-    if (
-      search &&
-      !recipe.name.toLowerCase().includes(search.toLowerCase())
-    ) {
-      return false;
-    }
+const filteredRecipes = recipes
+    .filter((recipe) => {
+      if (
+        search &&
+        !recipe.name.toLowerCase().includes(search.toLowerCase())
+      ) {
+        return false;
+      }
 
-    // Type filter
-    if (typeFilter && recipe.recipe_type !== typeFilter) {
-      return false;
-    }
+      if (typeFilter && recipe.recipe_type !== typeFilter) {
+        return false;
+      }
 
-    return true;
-  });
+      return true;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
 
   return (
