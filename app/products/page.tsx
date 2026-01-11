@@ -8,15 +8,19 @@ import {
    DialogContent,
    DialogActions,
    Tooltip,
+   Popover,
+   Divider,
   } 
 from "@mui/material";
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import FilterListIcon from "@mui/icons-material/FilterList";
 import EditIcon from "@mui/icons-material/Edit";
 import AppAlert from "@/app/components/ui/AppAlert";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import AppButton from "../components/ui/AppButton";
 import AppInput from "../components/ui/AppInput";
 import { AppSelect } from "../components/ui/AppSelect";
+import { useRef } from "react";
 
 type Product = {
   id: number
@@ -50,6 +54,14 @@ export default function ProductsPage() {
     message: "",
     severity: "success",
   });
+  // 🔍 Filters
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [unitFilter, setUnitFilter] = useState<"oz" | "pcs" | "">("");
+  const [costSort, setCostSort] = useState<"asc" | "desc" | "">("");
+  const filterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // ✏️ Edit product
   const [editTarget, setEditTarget] = useState<Product | null>(null);
   const [editForm, setEditForm] = useState<EditProductForm>({
     name: "",
@@ -58,6 +70,7 @@ export default function ProductsPage() {
     unit_cost: "",
     category: "",
   });
+  // 📜 URL params
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -119,6 +132,45 @@ export default function ProductsPage() {
   if (loading) {
     return <div className="p-8">Loading products…</div>;
   }
+
+  // 📂 Unique categories (alphabetized)
+const categories = Array.from(
+  new Set(products.map((p) => p.category || "No Category"))
+).sort();
+
+// 🧠 Filtered + sorted products
+const filteredProducts = products
+  .filter((product) => {
+    // Search
+    if (
+      search &&
+      !product.name.toLowerCase().includes(search.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Category
+    if (categoryFilter) {
+      const cat = product.category || "No Category";
+      if (cat !== categoryFilter) return false;
+    }
+
+    // Unit
+    if (unitFilter && product.unit !== unitFilter) {
+      return false;
+    }
+
+    return true;
+  })
+  .sort((a, b) => {
+    if (!costSort) return 0;
+
+    const aCost = Number(a.unit_cost);
+    const bCost = Number(b.unit_cost);
+
+    return costSort === "asc" ? aCost - bCost : bCost - aCost;
+  });
+
 
   async function handleDelete() {
   if (!deleteTarget) return;
@@ -199,6 +251,12 @@ export default function ProductsPage() {
     }
   }
 
+  function resetFilters() {
+    setCategoryFilter("");
+    setUnitFilter("");
+    setCostSort("");
+    setSearch("");
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -213,13 +271,125 @@ export default function ProductsPage() {
           router.replace("/products");
         }}
       />
-      <h1 className="text-3xl font-bold mb-6">Products</h1>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between mb-6 gap-4">
+          {/* Left: Title */}
+          <h1 className="text-3xl font-bold whitespace-nowrap">
+            Products
+          </h1>
+          <Popover
+            open={filtersOpen}
+            anchorEl={filterButtonRef.current}
+            onClose={() => setFiltersOpen(false)}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+            PaperProps={{
+              sx: {
+                backgroundColor: "#262626",
+                border: "1px solid #333",
+                borderRadius: 2,
+                p: 2,
+                width: 260,
+              },
+            }}
+          >
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-white">
+                Filters
+              </div>
+
+              <Divider sx={{ borderColor: "#333" }} />
+
+              <AppSelect
+                label="Category"
+                value={categoryFilter}
+                onChange={(val) => setCategoryFilter(val as string)}
+                options={[
+                  { label: "All", value: "" },
+                  ...categories.map((c) => ({
+                    label: c,
+                    value: c,
+                  })),
+                ]}
+              />
+
+              <AppSelect
+                label="Unit"
+                value={unitFilter}
+                onChange={(val) =>
+                  setUnitFilter(val as "oz" | "pcs" | "")
+                }
+                options={[
+                  { label: "All", value: "" },
+                  { label: "Ounces", value: "oz" },
+                  { label: "Pieces", value: "pcs" },
+                ]}
+              />
+
+              <AppSelect
+                label="Sort by Cost"
+                value={costSort}
+                onChange={(val) =>
+                  setCostSort(val as "asc" | "desc" | "")
+                }
+                options={[
+                  { label: "None", value: "" },
+                  { label: "Low → High", value: "asc" },
+                  { label: "High → Low", value: "desc" },
+                ]}
+              />
+
+              <Divider sx={{ borderColor: "#333" }} />
+
+              <AppButton
+                variant="secondary"
+                fullWidth
+                onClick={() => {
+                  resetFilters();
+                  setFiltersOpen(false);
+                }}
+              >
+                Reset Filters
+              </AppButton>
+            </div>
+          </Popover>
+
+          {/* Right: Search + Filters */}
+          <div className="flex items-center gap-3 flex-1 justify-end">
+            <div className="max-w-xs w-full">
+              <AppInput
+              label=""
+                placeholder="Search products…"
+                value={search}
+                onChange={(val) => setSearch(val)}
+                size="small"
+              />
+            </div>
+
+            <AppButton
+              ref={filterButtonRef}
+              variant="ghost"
+              startIcon={<FilterListIcon />}
+               onClick={() => setFiltersOpen(true)}
+            >
+              Filters
+            </AppButton>
+          </div>
+        </div>
+      </div>
+
 
       {products.length === 0 ? (
         <p className="text-gray-500">No products found.</p>
       ) : (
         <div className="space-y-4">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <div
               key={product.id}
               className="border rounded p-4 flex items-center justify-between"
@@ -392,3 +562,4 @@ export default function ProductsPage() {
     </div>
   )
 }
+
