@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import { AppSelect } from "@/app/components/ui/AppSelect";
+import { SelectOption } from "@/app/components/ui/types";
 import { Stack } from "@mui/material";
 
 type Product = {
@@ -11,6 +12,7 @@ type Product = {
   name: string;
   unit: "oz" | "pcs";
   unit_cost: number;
+  category: string;
 };
 
 export default function PricingCalculatorPage() {
@@ -37,6 +39,38 @@ export default function PricingCalculatorPage() {
   const selectedProducts = products.filter((p) =>
     selectedProductIds.includes(p.id)
   );
+
+  const groupedProductOptions = Object.entries(
+    products.reduce<Record<string, SelectOption<number>[]>>(
+      (acc, product) => {
+        const category =
+          product.category?.trim() || "No Category";
+
+        acc[category] ??= [];
+        acc[category].push({
+          value: product.id,
+          label: `${product.name} ($${product.unit_cost}/${product.unit})`,
+        });
+
+        return acc;
+      },
+      {}
+    )
+  )
+    .map(([group, options]) => ({
+      group,
+      options: options.sort((a, b) =>
+        a.label.localeCompare(b.label, undefined, {
+          sensitivity: "base",
+        })
+      ),
+    }))
+    .sort((a, b) => {
+      if (a.group === "No Category") return 1;
+      if (b.group === "No Category") return -1;
+      return a.group.localeCompare(b.group);
+    });
+
 
   // Cost calculation
   const totalCost = useMemo(() => {
@@ -77,10 +111,7 @@ export default function PricingCalculatorPage() {
           onChange={(val) =>
             setSelectedProductIds(Array.isArray(val) ? val : [val])
           }
-          options={products.map((p) => ({
-            value: p.id,
-            label: `${p.name} ($${p.unit_cost}/${p.unit})`,
-          }))}
+          options={groupedProductOptions}
         />
       </Stack>
 

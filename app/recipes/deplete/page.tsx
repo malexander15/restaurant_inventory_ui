@@ -131,10 +131,13 @@ export default function DepleteInventoryPage() {
               onChange={(val) =>
                 setSelectedRecipeIds(Array.isArray(val) ? val : [val])
               }
-              options={recipes.map((recipe) => ({
-                label: recipe.name,
-                value: recipe.id,
-              }))}
+              options={recipes
+                .slice() // avoid mutating state
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((recipe) => ({
+                  label: recipe.name,
+                  value: recipe.id,
+                }))}
             />
 
             {selectedRecipes.map((recipe) => (

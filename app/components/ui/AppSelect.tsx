@@ -7,34 +7,44 @@ import {
   MenuItem,
   Checkbox,
   OutlinedInput,
+  ListSubheader,
 } from "@mui/material";
-import { SelectOption } from "./types";
+import { GroupedSelectOption, SelectOption } from "./types";
+import React from "react";
 
 type AppSelectProps<T extends string | number = string> = {
   label: string;
-  options: SelectOption<T>[];
+  options: SelectOption<T>[] | GroupedSelectOption<T>[];
   value: T | T[];
   onChange: (value: T | T[]) => void;
 
   multiple?: boolean;
   checkbox?: boolean;
-  defaultValue?: T;
-
   disabled?: boolean;
   fullWidth?: boolean;
 };
 
-export function AppSelect<T extends string | number = string  >({
+export function AppSelect<T extends string | number = string>({
   label,
   options,
   value,
   onChange,
   multiple = false,
   checkbox = false,
-  defaultValue,
   disabled = false,
   fullWidth = true,
 }: AppSelectProps<T>) {
+  // ✅ detect grouped options
+  const isGrouped =
+    options.length > 0 && "group" in options[0];
+
+  // ✅ flatten options for renderValue
+  const flatOptions: SelectOption<T>[] = isGrouped
+    ? (options as GroupedSelectOption<T>[]).flatMap(
+        (g) => g.options
+      )
+    : (options as SelectOption<T>[]);
+
   return (
     <FormControl fullWidth={fullWidth}>
       <InputLabel sx={{ color: "white" }}>
@@ -45,7 +55,9 @@ export function AppSelect<T extends string | number = string  >({
         multiple={multiple}
         value={value}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.value as T | T[])}
+        onChange={(e) =>
+          onChange(e.target.value as T | T[])
+        }
         input={
           <OutlinedInput
             label={label}
@@ -57,12 +69,17 @@ export function AppSelect<T extends string | number = string  >({
         }
         renderValue={(selected) => {
           if (Array.isArray(selected)) {
-            return options
+            return flatOptions
               .filter((o) => selected.includes(o.value))
               .map((o) => o.label)
               .join(", ");
           }
-          return options.find((o) => o.value === selected)?.label ?? "";
+
+          return (
+            flatOptions.find(
+              (o) => o.value === selected
+            )?.label ?? ""
+          );
         }}
         MenuProps={{
           PaperProps: {
@@ -88,34 +105,67 @@ export function AppSelect<T extends string | number = string  >({
           },
         }}
       >
-        {options.map((opt) => (
-          <MenuItem
-            key={opt.value}
-            value={opt.value}
-            sx={{
-              color: "white",
-              "&.Mui-selected": {
-                backgroundColor: "#333",
-              },
-              "&.Mui-selected:hover": {
-                backgroundColor: "#444",
-              },
-              "&:hover": {
-                backgroundColor: "#333",
-              },
-            }}
-          >
-            {checkbox && multiple && (
-              <Checkbox
-                checked={
-                  Array.isArray(value) &&
-                  value.includes(opt.value)
-                }
-              />
-            )}
-            {opt.label}
-          </MenuItem>
-        ))}
+      {Array.isArray(options) &&
+      options.length > 0 &&
+      "group" in options[0]
+        ? (options as GroupedSelectOption<T>[]).flatMap((group) => [
+            <ListSubheader
+              key={`subheader-${group.group}`}
+              disableSticky
+              sx={{
+                backgroundColor: "#262626",
+                color: "#aaa",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                lineHeight: "32px",
+              }}
+            >
+              {group.group}
+            </ListSubheader>,
+
+            ...group.options.map((child) => (
+              <MenuItem
+                key={child.value}
+                value={child.value}
+                sx={{
+                  color: "white",
+                  "&.Mui-selected": { backgroundColor: "#333" },
+                  "&.Mui-selected:hover": { backgroundColor: "#444" },
+                  "&:hover": { backgroundColor: "#333" },
+                }}
+              >
+                {checkbox && multiple && (
+                  <Checkbox
+                    checked={
+                      Array.isArray(value) && value.includes(child.value)
+                    }
+                  />
+                )}
+                {child.label}
+              </MenuItem>
+            )),
+          ])
+        : (options as SelectOption<T>[]).map((opt) => (
+            <MenuItem
+              key={opt.value}
+              value={opt.value}
+              sx={{
+                color: "white",
+                "&.Mui-selected": { backgroundColor: "#333" },
+                "&.Mui-selected:hover": { backgroundColor: "#444" },
+                "&:hover": { backgroundColor: "#333" },
+              }}
+            >
+              {checkbox && multiple && (
+                <Checkbox
+                  checked={
+                    Array.isArray(value) && value.includes(opt.value)
+                  }
+                />
+              )}
+              {opt.label}
+            </MenuItem>
+          ))}
       </Select>
     </FormControl>
   );

@@ -25,6 +25,7 @@ type Product = {
   stock_quantity: string
   unit_cost: string
   barcode?: string | null
+  category: string | null
 }
 
 type EditProductForm = {
@@ -32,6 +33,7 @@ type EditProductForm = {
   barcode: string;
   unit: "oz" | "pcs";
   unit_cost: string;
+  category: string | null;
 };
 
 
@@ -54,6 +56,7 @@ export default function ProductsPage() {
     barcode: "",
     unit: "oz",
     unit_cost: "",
+    category: "",
   });
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -166,6 +169,7 @@ export default function ProductsPage() {
             barcode: editForm.barcode,
             unit: editForm.unit,
             unit_cost: Number(editForm.unit_cost),
+            category: editForm.category,
           },
         }),
       }
@@ -230,6 +234,7 @@ export default function ProductsPage() {
                   <span>
                     {product.stock_quantity} {product.unit}
                   </span>
+                  <span>•</span>
                 <div className="flex items-center gap-2">
                   <EditIcon
                     className="cursor-pointer text-blue-400 hover:text-blue-300"
@@ -241,6 +246,7 @@ export default function ProductsPage() {
                         barcode: product.barcode || "",
                         unit: product.unit,
                         unit_cost: product.unit_cost,
+                        category: product.category,
                       });
                     }}
                   />
@@ -250,8 +256,11 @@ export default function ProductsPage() {
                     onClick={() => setDeleteTarget(product)}
                   />
                 </div>
-                </div>
               </div>
+              <div className="text-sm text-white/70">
+              <span>Category: {product.category || "N/A"}</span>
+              </div>
+            </div>
 
               {/* RIGHT: price */}
               <div className="text-sm text-white/70">
@@ -294,6 +303,17 @@ export default function ProductsPage() {
               value={editForm.name}
               onChange={(val) =>
                 setEditForm({ ...editForm, name: val })
+              }
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <AppInput
+              label="Category"
+              value={editForm.category || ""}
+              onChange={(val) =>
+                setEditForm({ ...editForm, category: val })
               }
             />
           </div>

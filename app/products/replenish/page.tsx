@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppInput from "@/app/components/ui/AppInput";
 import { AppSelect } from "@/app/components/ui/AppSelect";
-import { FormControl, Snackbar, Alert } from "@mui/material";
+import { FormControl, Snackbar, Alert, ListSubheader } from "@mui/material";
+import { SelectOption } from "@/app/components/ui/types";
 
 type Product = {
   id: number;
   name: string;
   unit: "oz" | "pcs";
+  category: string;
 };
 
 export default function ReplenishInventoryPage() {
@@ -22,6 +24,7 @@ export default function ReplenishInventoryPage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  
 
   useEffect(() => {
     async function loadProducts() {
@@ -35,6 +38,35 @@ export default function ReplenishInventoryPage() {
 
     loadProducts();
   }, []);
+
+  const groupedProductOptions = Object.entries(
+    products.reduce<Record<string, SelectOption<number>[]>>(
+      (acc, product) => {
+        const category =
+          product.category?.trim() || "No Category";
+
+        acc[category] ??= [];
+        acc[category].push({
+          label: product.name,
+          value: product.id,
+        });
+
+        return acc;
+      },
+      {}
+    )
+  )
+    .map(([group, options]) => ({
+      group,
+      options: options.sort((a, b) =>
+        a.label.localeCompare(b.label)
+      ),
+    }))
+    .sort((a, b) => {
+      if (a.group === "No Category") return 1;
+      if (b.group === "No Category") return -1;
+      return a.group.localeCompare(b.group);
+    });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -119,10 +151,7 @@ export default function ReplenishInventoryPage() {
         <FormControl fullWidth>
           <AppSelect<number>
             label="Select Products"
-            options={products.map((p) => ({
-              label: p.name,
-              value: p.id,
-            }))}
+            options={groupedProductOptions}
             value={selectedProductIds}
             onChange={(val) =>
               setSelectedProductIds(

@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  FormControl,
-  InputLabel,
-} from "@mui/material";
+import { FormControl } from "@mui/material";
 import AppInput from "@/app/components/ui/AppInput";
 import AppCheckbox from "@/app/components/ui/AppCheckbox";
 import { AppSelect } from "@/app/components/ui/AppSelect";
@@ -48,6 +45,34 @@ export default function NewRecipePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [errorAlert, setErrorAlert] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const products = ingredientOptions.filter(
+    (i) => i.ingredientType === "Product"
+  );
+
+  const preppedRecipes = ingredientOptions.filter(
+    (i) => i.ingredientType === "Recipe"
+  );
+
+  const groupedIngredientOptions = [
+    {
+      group: "Products",
+      options: products
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((p) => ({
+          value: `Product-${p.id}`,
+          label: `${p.name}${p.unit ? ` (${p.unit})` : ""}`,
+        })),
+    },
+    {
+      group: "Prepped Items",
+      options: preppedRecipes
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((r) => ({
+          value: `Recipe-${r.id}`,
+          label: r.name,
+        })),
+    },
+  ].filter((g) => g.options.length > 0);
 
 
   function handleChange(
@@ -280,21 +305,15 @@ export default function NewRecipePage() {
 
         <div>
           <FormControl fullWidth>  
-            <AppSelect
+            <AppSelect<string>
               label="Select Ingredients"
               multiple
               checkbox
               value={selectedIngredients}
-              onChange={(vals: string | string[]) =>
+              onChange={(vals) =>
                 setSelectedIngredients(Array.isArray(vals) ? vals : [vals])
               }
-              options={ingredientOptions.map((option) => ({
-                value: `${option.ingredientType}-${option.id}`,
-                label:
-                  option.ingredientType === "Product"
-                    ? `${option.name} (Product${option.unit ? ` - ${option.unit}` : ""})`
-                    : `${option.name} (Prepped Item)`,
-              }))}
+              options={groupedIngredientOptions}
             />
           
             {selectedIngredients.map((key) => {

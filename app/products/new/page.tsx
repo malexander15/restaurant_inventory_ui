@@ -10,6 +10,7 @@ type ProductForm = {
   unit: string;
   stock_quantity: string;
   unit_cost: string;
+  category: string;
 }
 
 // New Product Page Component
@@ -24,10 +25,12 @@ export default function NewProductPage() {
     barcode: '',
     unit: 'oz',
     stock_quantity: '',
-    unit_cost: ''
+    unit_cost: '',
+    category: '',
   });
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  
 
   // Handle input changes either from text inputs or select dropdowns
   function handleChange(
@@ -101,6 +104,15 @@ export default function NewProductPage() {
             value={form.name}
             onChange={(val) => setForm({ ...form, name: val })}
             required
+          />
+        </div>
+
+        <div>
+          <AppInput
+            label="Category"
+            name="category"
+            value={form.category}
+            onChange={(val) => setForm({ ...form, category: val })}
           />
         </div>
 
