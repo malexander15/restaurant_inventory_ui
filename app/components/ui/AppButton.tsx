@@ -5,7 +5,7 @@ import { Button } from "@mui/material";
 
 export type AppButtonProps = {
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   type?: "button" | "submit" | "reset";
   variant?: "primary" | "secondary" | "danger" | "ghost";
   disabled?: boolean;

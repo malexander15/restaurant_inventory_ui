@@ -22,6 +22,7 @@ type AppSelectProps<T extends string | number = string> = {
   checkbox?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
+  size?: "small" | "medium";
 };
 
 export function AppSelect<T extends string | number = string>({
@@ -33,6 +34,7 @@ export function AppSelect<T extends string | number = string>({
   checkbox = false,
   disabled = false,
   fullWidth = true,
+  size = "medium",
 }: AppSelectProps<T>) {
   // ✅ detect grouped options
   const isGrouped =
@@ -53,6 +55,7 @@ export function AppSelect<T extends string | number = string>({
 
       <Select
         multiple={multiple}
+        size={size}
         value={value}
         disabled={disabled}
         onChange={(e) =>

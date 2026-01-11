@@ -5,11 +5,14 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import EditIcon from "@mui/icons-material/Edit";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Popover,
+  Divider,
 } from "@mui/material";
 import AppInput from "../components/ui/AppInput";
 import AppButton from "../components/ui/AppButton";
@@ -47,6 +50,14 @@ export default function RecipesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Recipe | null>(null);
   const [isEditingIngredients, setIsEditingIngredients] = useState(false);
   const [ingredientDrafts, setIngredientDrafts] = useState<Record<number, string>>({});
+// 🔍 Filters
+  const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
+  const filtersOpen = Boolean(filterAnchor);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] =
+  useState<"" | "menu_item" | "prepped_item">("");
+
+  
 
   useEffect(() => {
     async function loadRecipes() {
@@ -172,23 +183,23 @@ export default function RecipesPage() {
   }
 
   // Update UI
-  setRecipes((prev) =>
-    prev.map((r) =>
-      r.id === recipe.id
-        ? {
-            ...r,
-            recipe_ingredients: r.recipe_ingredients.map((ri) => ({
-              ...ri,
-              quantity: Number(ingredientDrafts[ri.id] ?? ri.quantity),
-            })),
-          }
-        : r
-    )
-  );
+    setRecipes((prev) =>
+      prev.map((r) =>
+        r.id === recipe.id
+          ? {
+              ...r,
+              recipe_ingredients: r.recipe_ingredients.map((ri) => ({
+                ...ri,
+                quantity: Number(ingredientDrafts[ri.id] ?? ri.quantity),
+              })),
+            }
+          : r
+      )
+    );
 
-  setIsEditingIngredients(false);
-  setIngredientDrafts({});
-}
+    setIsEditingIngredients(false);
+    setIngredientDrafts({});
+  }
 
   // For deleting ingredients from a recipe
   async function handleIngredientDelete(ri: any) {
@@ -217,6 +228,24 @@ export default function RecipesPage() {
     );
   }
 
+  const filteredRecipes = recipes.filter((recipe) => {
+    // Search
+    if (
+      search &&
+      !recipe.name.toLowerCase().includes(search.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Type filter
+    if (typeFilter && recipe.recipe_type !== typeFilter) {
+      return false;
+    }
+
+    return true;
+  });
+
+
   return (
     // Main container
     <div className="max-w-3xl mx-auto p-6">
@@ -229,14 +258,98 @@ export default function RecipesPage() {
           router.replace("/recipes");
         }}
       />
-      
-      {/* Header & New Recipe Button */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Recipes</h1>
+          
+      {/* Header + search + filters */}
+      <div className="flex items-center justify-between mb-2 gap-4">
+        {/* Left: Title */}
+        <h1 className="text-3xl font-bold whitespace-nowrap">
+          Recipes
+        </h1>
+        <Popover
+          open={filtersOpen}
+          anchorEl={filterAnchor}
+          onClose={() => setFilterAnchor(null)}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+          PaperProps={{
+            sx: {
+              backgroundColor: "#262626",
+              border: "1px solid #333",
+              borderRadius: 2,
+              p: 2,
+              width: 240,
+            },
+          }}
+        >
+          <div className="space-y-3">
+            <div className="text-sm font-semibold text-white">
+              Filters
+            </div>
 
+            <Divider sx={{ borderColor: "#333" }} />
+
+            <AppSelect
+              label="Recipe Type"
+              value={typeFilter}
+              onChange={(val) =>
+                setTypeFilter(val as "" | "menu_item" | "prepped_item")
+              }
+              options={[
+                { label: "All", value: "" },
+                { label: "Menu Items", value: "menu_item" },
+                { label: "Prepped Items", value: "prepped_item" },
+              ]}
+            />
+
+            <Divider sx={{ borderColor: "#333" }} />
+
+            <AppButton
+              variant="secondary"
+              fullWidth
+              onClick={() => {
+                setTypeFilter("");
+                setFilterAnchor(null);
+              }}
+            >
+              Reset Filters
+            </AppButton>
+          </div>
+        </Popover>
+
+
+        {/* Right: Search + Filter */}
+        <div className="flex items-center gap-3">
+          <div className="w-64">
+            <AppInput
+              label=""
+              placeholder="Search recipes…"
+              value={search}
+              onChange={(val) => setSearch(val)}
+              size="small"
+            />
+          </div>
+
+          <AppButton
+            variant="ghost"
+            startIcon={<FilterListIcon />}
+            onClick={(e) => setFilterAnchor(e.currentTarget)}
+          >
+            Filters
+          </AppButton>
+        </div>
+      </div>
+
+      {/* New recipe button (own row) */}
+      <div className="mb-6">
         <Link
           href="/recipes/new"
-          className="text-sm px-4 py-2 border rounded hover:bg-gray-100/10"
+          className="inline-block text-sm px-4 py-2 border rounded hover:bg-gray-100/10"
         >
           + New Recipe
         </Link>
@@ -244,7 +357,7 @@ export default function RecipesPage() {
 
       {/* Recipe list */}
       <div className="space-y-4">
-        {recipes.map((recipe) => {
+        {filteredRecipes.map((recipe) => {
           const isExpanded = expandedRecipeId === recipe.id;
 
           return (
