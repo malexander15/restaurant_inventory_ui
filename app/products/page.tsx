@@ -164,10 +164,17 @@ const filteredProducts = products
     return true;
   })
   .sort((a, b) => {
-    if (!costSort) return 0;
+    // Alphabetize by name by default
+    const nameCompare = a.name.localeCompare(b.name);
 
+    // If no cost sort requested, use name ordering
+    if (!costSort) return nameCompare;
+
+    // When sorting by cost, use cost first but fall back to name for ties
     const aCost = Number(a.unit_cost);
     const bCost = Number(b.unit_cost);
+
+    if (aCost === bCost) return nameCompare;
 
     return costSort === "asc" ? aCost - bCost : bCost - aCost;
   });

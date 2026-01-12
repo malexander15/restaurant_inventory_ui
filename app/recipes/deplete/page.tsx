@@ -1,20 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormControl } from "@mui/material";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
 import AppInput from "@/app/components/ui/AppInput";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
+import Papa from "papaparse";
 
 type Recipe = {
   id: number;
   name: string;
 };
 
+type StagedDepletion = {
+  recipe_id: number;
+  recipe_name: string;
+  quantity: number;
+  source: "csv";
+};
+
+
 export default function DepleteInventoryPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -26,6 +36,13 @@ export default function DepleteInventoryPage() {
   const selectedRecipes = recipes.filter((r) =>
     selectedRecipeIds.includes(r.id)
   );
+  const [csvRows, setCsvRows] = useState<any[]>([]);
+  const [csvError, setCsvError] = useState<string | null>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvStagedItems, setCsvStagedItems] = useState<StagedDepletion[]>( []);
+  const [csvParsed, setCsvParsed] = useState(false);
+  const [csvApplied, setCsvApplied] = useState(false);
+  const [showAllUnmatched, setShowAllUnmatched] = useState(false);
 
   useEffect(() => {
     async function loadMenuItems() {
@@ -48,6 +65,75 @@ export default function DepleteInventoryPage() {
 
     setConfirmOpen(true);
   }
+
+  function normalizeName(value: string) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " "); // collapse extra spaces
+  }
+
+  const csvDepletions = normalizeSales(csvRows);
+  console.log("Normalized CSV depletions:", csvDepletions);
+
+  const matchedRecipes = recipes
+    .map((recipe) => {
+      const matchQty = csvDepletions[normalizeName(recipe.name)];
+      if (!matchQty) return null;
+
+      return {
+        recipe,
+        quantity: matchQty,
+      };
+    })
+    .filter(Boolean) as { recipe: Recipe; quantity: number }[];
+
+  const unmatchedCsvItems = Object.keys(csvDepletions).filter(
+    (name) =>
+      !recipes.some(
+        (r) => normalizeName(r.name) === normalizeName(name)
+      )
+  );
+
+  const MAX_UNMATCHED_PREVIEW = 10;
+
+  const hasMoreUnmatched =
+    unmatchedCsvItems.length > MAX_UNMATCHED_PREVIEW;
+
+  const visibleUnmatchedItems = showAllUnmatched
+    ? unmatchedCsvItems
+    : unmatchedCsvItems.slice(0, MAX_UNMATCHED_PREVIEW);
+
+    const MAX_MATCHED_PREVIEW = 10;
+
+  const [showAllMatched, setShowAllMatched] = useState(false);
+
+  const hasMoreMatched =
+    matchedRecipes.length > MAX_MATCHED_PREVIEW;
+
+  const visibleMatchedItems = showAllMatched
+    ? matchedRecipes
+    : matchedRecipes.slice(0, MAX_MATCHED_PREVIEW);
+
+  useEffect(() => {
+    if (matchedRecipes.length === 0) return;
+    if (csvApplied) return;
+
+    setSelectedRecipeIds(
+      matchedRecipes.map((m) => m.recipe.id)
+    );
+
+    setQuantities(
+      Object.fromEntries(
+        matchedRecipes.map((m) => [
+          m.recipe.id,
+          m.quantity,
+        ])
+      )
+    );
+
+    setCsvApplied(true);
+  }, [matchedRecipes, csvApplied]);
 
   async function handleConfirmDeplete() {
   setSubmitting(true);
@@ -84,22 +170,79 @@ export default function DepleteInventoryPage() {
   }
 }
 
-
   function validate() {
-  if (selectedRecipes.length === 0) {
-    setError("Please select at least one menu item");
-    return false;
-  }
-
-  for (const recipe of selectedRecipes) {
-    if (!quantities[recipe.id] || quantities[recipe.id] <= 0) {
-      setError(`Please enter a quantity for ${recipe.name}`);
+    if (selectedRecipes.length === 0) {
+      setError("Please select at least one menu item");
       return false;
     }
+
+    for (const recipe of selectedRecipes) {
+      if (!quantities[recipe.id] || quantities[recipe.id] <= 0) {
+        setError(`Please enter a quantity for ${recipe.name}`);
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  return true;
-}
+  function normalizeSales(rows: any[]) {
+    const map: Record<string, number> = {};
+
+    for (const row of rows) {
+      // Inspect raw row shape
+      const rawName = row.item ?? row.Item ?? row.ITEM;
+      const rawQty =
+        row["items sold"] ??
+        row["Items Sold"] ??
+        row.items_sold ??
+        row.quantity;
+
+      if (!rawName || rawQty == null) continue;
+
+      const name = normalizeName(String(rawName));
+      const qty = Number(String(rawQty).replace(/,/g, ""));
+
+      if (!Number.isFinite(qty) || qty <= 0) continue;
+
+      map[name] = (map[name] || 0) + qty;
+    }
+
+    return map;
+  }
+
+  function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCsvFile(file);
+    setCsvError(null);
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+          console.log("CSV meta fields:", results.meta.fields);
+  console.log("First row:", results.data[0]);
+        setCsvRows(results.data as any[]);
+        setCsvParsed(true);
+      },
+      error: (error) => {
+        setCsvError(`CSV parsing error: ${error.message}`);
+      },
+    });
+    setCsvParsed(false);
+  }
+
+  useEffect(() => {
+  if (!csvParsed) return;
+
+  console.log("CSV keys:", Object.keys(csvDepletions));
+  console.log(
+    "Recipe names:",
+    recipes.map((r) => normalizeName(r.name))
+  );
+}, [csvParsed, csvDepletions, recipes]);
 
 
   return (
@@ -172,6 +315,114 @@ export default function DepleteInventoryPage() {
           Deplete Inventory
         </AppButton>
       </form>
+      <div className="border rounded p-3 space-y-2">
+        <h2 className="font-semibold text-sm">
+          Upload POS Sales Report (CSV)
+        </h2>
+
+        <input
+          type="file"
+          accept=".csv"
+          ref={fileInputRef}
+          hidden
+          onChange={handleCsvUpload}
+        />
+
+        <AppButton
+          variant="secondary"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Upload CSV
+        </AppButton>
+
+        {csvError && (
+          <p className="text-sm text-red-500">{csvError}</p>
+        )}
+      </div>
+      {csvParsed && (
+        <div className="border rounded p-3 text-sm space-y-1 bg-white/5">
+          <div>
+            <strong>File:</strong> {csvFile?.name}
+          </div>
+
+          <div>
+            <strong>Rows parsed:</strong> {csvRows.length}
+          </div>
+
+          <div>
+            <strong>Matched menu items:</strong> {matchedRecipes.length}
+          </div>
+
+          {unmatchedCsvItems.length > 0 && (
+            <div className="text-yellow-400">
+              {unmatchedCsvItems.length} item(s) could not be matched
+            </div>
+          )}
+        </div>
+      )}
+
+      {matchedRecipes.length > 0 && (
+        <div className="border border-green-600 bg-green-50/10 p-3 rounded text-sm space-y-2">
+          <strong className="text-green-400">
+            Matched menu items (ready to deplete):
+          </strong>
+
+          <ul className="list-disc ml-4">
+            {visibleMatchedItems.map(({ recipe, quantity }) => (
+              <li key={recipe.id} className="flex justify-between gap-4">
+                <span>{recipe.name}</span>
+                <span className="text-green-400 font-medium">
+                  {quantity}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {hasMoreMatched && !showAllMatched && (
+            <div className="text-green-400">
+              +{matchedRecipes.length - MAX_MATCHED_PREVIEW} more items
+            </div>
+          )}
+
+          {hasMoreMatched && (
+            <AppButton
+              variant="ghost"
+              onClick={() => setShowAllMatched((prev) => !prev)}
+            >
+              {showAllMatched ? "See less" : "See more"}
+            </AppButton>
+          )}
+        </div>
+      )}
+
+
+      {unmatchedCsvItems.length > 0 && (
+        <div className="border border-yellow-500 bg-yellow-50/10 p-3 rounded text-sm space-y-2">
+          <strong>Unmatched items (not depleted):</strong>
+
+          <ul className="list-disc ml-4">
+            {visibleUnmatchedItems.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+
+          {hasMoreUnmatched && !showAllUnmatched && (
+            <div className="text-yellow-400">
+              +{unmatchedCsvItems.length - MAX_UNMATCHED_PREVIEW} more items
+            </div>
+          )}
+
+          {hasMoreUnmatched && (
+            <AppButton
+              variant="ghost"
+              onClick={() => setShowAllUnmatched((prev) => !prev)}
+            >
+              {showAllUnmatched ? "See less" : "See more"}
+            </AppButton>
+          )}
+        </div>
+      )}
+
       <ConfirmDialog
         open={confirmOpen}
         title="Confirm Inventory Depletion"
