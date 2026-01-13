@@ -10,6 +10,7 @@ import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import AppAlert from "@/app/components/ui/AppAlert";
+import NewRecipePageSkeleton from "@/app/recipes/new/NewRecipePageSkeleton";
 
 type Product = {
   id: number;
@@ -44,6 +45,7 @@ export default function NewRecipePage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [errorAlert, setErrorAlert] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const products = ingredientOptions.filter(
     (i) => i.ingredientType === "Product"
@@ -223,11 +225,17 @@ export default function NewRecipePage() {
         setQuantities({});
       } catch (err) {
         console.error("Failed to load ingredients", err);
+      } finally {
+        setLoading(false);
       }
     }
 
     loadIngredients();
   }, [form.is_prepped]);
+
+  if (loading) {
+    return <NewRecipePageSkeleton />;
+  }
 
   return (
     

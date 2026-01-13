@@ -6,6 +6,7 @@ import { FormControl } from "@mui/material";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
 import AppInput from "@/app/components/ui/AppInput";
+import DepleteInventoryPageSkeleton from "@/app/recipes/deplete/DepleteInventoryPageSkeleton";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import Papa from "papaparse";
 
@@ -31,6 +32,7 @@ export default function DepleteInventoryPage() {
   const [selectedRecipeIds, setSelectedRecipeIds] = useState<number[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const selectedRecipes = recipes.filter((r) =>
@@ -52,6 +54,7 @@ export default function DepleteInventoryPage() {
       );
       const data = await res.json();
       setRecipes(data);
+      setLoading(false);
     }
 
     loadMenuItems();
@@ -222,8 +225,6 @@ export default function DepleteInventoryPage() {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-          console.log("CSV meta fields:", results.meta.fields);
-  console.log("First row:", results.data[0]);
         setCsvRows(results.data as any[]);
         setCsvParsed(true);
       },
@@ -235,15 +236,18 @@ export default function DepleteInventoryPage() {
   }
 
   useEffect(() => {
-  if (!csvParsed) return;
+    if (!csvParsed) return;
 
-  console.log("CSV keys:", Object.keys(csvDepletions));
-  console.log(
-    "Recipe names:",
-    recipes.map((r) => normalizeName(r.name))
-  );
-}, [csvParsed, csvDepletions, recipes]);
+    console.log("CSV keys:", Object.keys(csvDepletions));
+    console.log(
+      "Recipe names:",
+      recipes.map((r) => normalizeName(r.name))
+    );
+  }, [csvParsed, csvDepletions, recipes]);
 
+  if (loading) {
+    return <DepleteInventoryPageSkeleton />;
+  }
 
   return (
     <div className="max-w-md mx-auto p-6">

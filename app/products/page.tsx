@@ -11,6 +11,7 @@ import {
    Tooltip,
    Popover,
    Divider,
+   Skeleton,
   } 
 from "@mui/material";
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
@@ -20,8 +21,11 @@ import AppAlert from "@/app/components/ui/AppAlert";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import AppButton from "../components/ui/AppButton";
 import AppInput from "../components/ui/AppInput";
+import ListSkeleton from "../components/ui/skeletons/ListSkeleton";
+import InputSkeleton from "../components/ui/skeletons/InputSkeleton";
 import { AppSelect } from "../components/ui/AppSelect";
 import { useRef } from "react";
+import ProductPageSkeleton from "./ProductPageSkeleton";
 
 type Product = {
   id: number
@@ -108,8 +112,6 @@ export default function ProductsPage() {
   }
   }, [searchParams]);
 
-
-
   // ✅ fetch products in an effect
   useEffect(() => {
     async function loadProducts() {
@@ -131,13 +133,13 @@ export default function ProductsPage() {
   }, []);
 
   if (loading) {
-    return <div className="p-8">Loading products…</div>;
+    return <ProductPageSkeleton />;
   }
 
   // 📂 Unique categories (alphabetized)
-const categories = Array.from(
-  new Set(products.map((p) => p.category || "No Category"))
-).sort();
+  const categories = Array.from(
+    new Set(products.map((p) => p.category || "No Category"))
+  ).sort();
 
 // 🧠 Filtered + sorted products
 const filteredProducts = products
@@ -373,6 +375,9 @@ const filteredProducts = products
           {/* Right: Search + Filters */}
           <div className="flex items-center gap-3 flex-1 justify-end">
             <div className="max-w-xs w-full">
+              {loading ? (
+                <InputSkeleton />
+              ) : (
               <AppInput
                 label=""
                 placeholder="Search products…"
@@ -380,6 +385,7 @@ const filteredProducts = products
                 onChange={(val) => setSearch(val)}
                 size="small"
               />
+              )}
             </div>
 
             <AppButton
@@ -404,7 +410,7 @@ const filteredProducts = products
         </div>
       </div>
 
-      {products.length === 0 ? (
+      {!loading && filteredProducts.length === 0 ? (
         <p className="text-gray-500">No products found.</p>
       ) : (
         <div className="space-y-4">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppInput from "@/app/components/ui/AppInput";
+import ReplenishPageSkeleton from "@/app/products/replenish/ReplenishPageSkeleton";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import { FormControl, Snackbar, Alert, ListSubheader } from "@mui/material";
 import { SelectOption } from "@/app/components/ui/types";
@@ -24,6 +25,7 @@ export default function ReplenishInventoryPage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [loading, setLoading] = useState(false);
   
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function ReplenishInventoryPage() {
       );
       const data = await res.json();
       setProducts(data);
+      setLoading(false);
     }
 
     loadProducts();
@@ -117,7 +120,9 @@ export default function ReplenishInventoryPage() {
     router.push("/products?replenished=1");
   }
 
-
+  if (loading) {
+    return <ReplenishPageSkeleton />;
+  }
 
   return (
     <div className="max-w-md mx-auto p-6">

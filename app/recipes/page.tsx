@@ -19,6 +19,7 @@ import AppButton from "../components/ui/AppButton";
 import AppAlert from "../components/ui/AppAlert";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { AppSelect } from "../components/ui/AppSelect";
+import RecipePageSkeleton from "./RecipePageSkeleton";
 
 
 type Recipe = {
@@ -40,6 +41,7 @@ export default function RecipesPage() {
   message: "",
   severity: "success",
 });
+  const [loading, setLoading] = useState(true);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [expandedRecipeId, setExpandedRecipeId] = useState<number | null>(null);
   const [editTarget, setEditTarget] = useState<Recipe | null>(null);
@@ -57,8 +59,6 @@ export default function RecipesPage() {
   const [typeFilter, setTypeFilter] =
   useState<"" | "menu_item" | "prepped_item">("");
 
-  
-
   useEffect(() => {
     async function loadRecipes() {
       const res = await fetch(
@@ -67,10 +67,12 @@ export default function RecipesPage() {
       );
       const data = await res.json();
       setRecipes(data);
+      setLoading(false);
     }
 
     loadRecipes();
   }, [searchParams]);
+
 
   useEffect(() => {
     setIsEditingIngredients(false);
@@ -202,31 +204,33 @@ export default function RecipesPage() {
   }
 
   // For deleting ingredients from a recipe
-  async function handleIngredientDelete(ri: any) {
-    if (!confirm("Remove this ingredient?")) return;
+  // (not used in UI yet)
+  
+  // async function handleIngredientDelete(ri: any) {
+  //   if (!confirm("Remove this ingredient?")) return;
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/recipes/${ri.recipe_id}/recipe_ingredients/${ri.id}`,
-      {
-        method: "DELETE",
-      }
-    );
+  //   const res = await fetch(
+  //     `${process.env.NEXT_PUBLIC_API_URL}/recipes/${ri.recipe_id}/recipe_ingredients/${ri.id}`,
+  //     {
+  //       method: "DELETE",
+  //     }
+  //   );
 
-    if (!res.ok) return;
+  //   if (!res.ok) return;
 
-    setRecipes((prev) =>
-      prev.map((recipe) =>
-        recipe.id === ri.recipe_id
-          ? {
-              ...recipe,
-              recipe_ingredients: recipe.recipe_ingredients.filter(
-                (x: any) => x.id !== ri.id
-              ),
-            }
-          : recipe
-      )
-    );
-  }
+  //   setRecipes((prev) =>
+  //     prev.map((recipe) =>
+  //       recipe.id === ri.recipe_id
+  //         ? {
+  //             ...recipe,
+  //             recipe_ingredients: recipe.recipe_ingredients.filter(
+  //               (x: any) => x.id !== ri.id
+  //             ),
+  //           }
+  //         : recipe
+  //     )
+  //   );
+  // }
 
 const filteredRecipes = recipes
     .filter((recipe) => {
@@ -244,7 +248,10 @@ const filteredRecipes = recipes
       return true;
     })
     .sort((a, b) => a.name.localeCompare(b.name));
-
+    
+    if (loading) {
+    return <RecipePageSkeleton />;
+    }
 
   return (
     // Main container
