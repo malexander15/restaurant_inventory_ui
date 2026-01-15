@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppSelect } from '@/app/components/ui/AppSelect';
 import AppInput from '@/app/components/ui/AppInput';
+import { apiFetch } from '@/app/lib/api';
+
 type ProductForm = {
   name: string;
   barcode: string;
@@ -53,33 +55,31 @@ export default function NewProductPage() {
     setLoading(true);
     
     // Send a POST request to create a new product
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/products`,
-      {
+
+    try {
+      await apiFetch("/products", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify({
           product: {
-            // Spread the existing form data to include all fields
             ...form,
-            // Convert numeric fields to numbers
             stock_quantity: Number(form.stock_quantity),
-            unit_cost: Number(form.unit_cost)
-          }
-        })
+            unit_cost: Number(form.unit_cost),
+          },
+        }),
+      });
+
+      // ✅ success
+      router.push("/products/?created=1");
+    } catch (err: any) {
+      // Rails validation errors come back as JSON
+      if (err?.errors) {
+        setErrors(err.errors);
+      } else {
+        setErrors(["Something went wrong"]);
       }
-    )
-
-    setLoading(false)
-
-    if (!res.ok) {
-      const data = await res.json()
-      setErrors(data.errors || ["Something went wrong"])
-      return
+    } finally {
+      setLoading(false);
     }
-    router.push('/products/?created=1');
   }
 
   return (

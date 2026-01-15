@@ -8,6 +8,7 @@ import AppButton from "@/app/components/ui/AppButton";
 import AppInput from "@/app/components/ui/AppInput";
 import DepleteInventoryPageSkeleton from "@/app/recipes/deplete/DepleteInventoryPageSkeleton";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
+import { apiFetch } from "@/app/lib/api"
 import Papa from "papaparse";
 
 type Recipe = {
@@ -46,20 +47,29 @@ export default function DepleteInventoryPage() {
   const [csvApplied, setCsvApplied] = useState(false);
   const [showAllUnmatched, setShowAllUnmatched] = useState(false);
 
+  //Load menu item recipes  
   useEffect(() => {
     async function loadMenuItems() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/recipes?recipe_type=menu_item`,
-        { cache: "no-store" }
-      );
-      const data = await res.json();
-      setRecipes(data);
-      setLoading(false);
+      try {
+        const data = await apiFetch<Recipe[]>(
+          "/recipes?recipe_type=menu_item",
+          { cache: "no-store" }
+        );
+
+        if (!data) return;
+
+        setRecipes(data);
+      } catch (err) {
+        console.error("Failed to load menu items", err);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadMenuItems();
   }, []);
 
+  //Validate submission data and open dialog box to confirm submission
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -69,6 +79,9 @@ export default function DepleteInventoryPage() {
     setConfirmOpen(true);
   }
 
+  //Make name lowercase and trim white space.
+  // Used to make comparison of parsed csv file and recipe menu
+  // items easier and uniform
   function normalizeName(value: string) {
     return value
       .toLowerCase()
@@ -77,7 +90,6 @@ export default function DepleteInventoryPage() {
   }
 
   const csvDepletions = normalizeSales(csvRows);
-  console.log("Normalized CSV depletions:", csvDepletions);
 
   const matchedRecipes = recipes
     .map((recipe) => {
@@ -138,41 +150,41 @@ export default function DepleteInventoryPage() {
     setCsvApplied(true);
   }, [matchedRecipes, csvApplied]);
 
+  //Handles the POST of the depleting product inventory by mean of Menu Item Recipes
   async function handleConfirmDeplete() {
-  setSubmitting(true);
-  setError(null);
+    setSubmitting(true);
+    setError(null);
 
-  try {
-    for (const recipe of selectedRecipes) {
-      const qty = quantities[recipe.id];
+    try {
+      for (const recipe of selectedRecipes) {
+        const qty = quantities[recipe.id];
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipe.id}/deplete`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ quantity: qty }),
+        if (!qty || qty <= 0) {
+          throw new Error(`Invalid quantity for ${recipe.name}`);
         }
-      );
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(
-          data.error || `Failed to deplete ${recipe.name}`
+        await apiFetch(
+          `/recipes/${recipe.id}/deplete`,
+          {
+            method: "POST",
+            body: JSON.stringify({ quantity: qty }),
+          }
         );
       }
+
+      // ✅ success → redirect
+      router.push("/products/?depleted=1");
+    } catch (err: any) {
+      setError(err.message || "Failed to deplete inventory");
+      setConfirmOpen(false);
+    } finally {
+      setSubmitting(false);
     }
-
-    // ✅ success → redirect
-    router.push("/products/?depleted=1");
-  } catch (err: any) {
-    setError(err.message);
-    setConfirmOpen(false);
-  } finally {
-    setSubmitting(false);
   }
-}
 
+  //In order to depelet this criteria must be met:
+  //One Menu Item must be selected
+  //A quantity asscoiated with each menu item
   function validate() {
     if (selectedRecipes.length === 0) {
       setError("Please select at least one menu item");

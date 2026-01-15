@@ -20,6 +20,7 @@ import AppAlert from "../components/ui/AppAlert";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { AppSelect } from "../components/ui/AppSelect";
 import RecipePageSkeleton from "./RecipePageSkeleton";
+import { apiFetch } from "../lib/api";
 
 
 type Recipe = {
@@ -61,13 +62,16 @@ export default function RecipesPage() {
 
   useEffect(() => {
     async function loadRecipes() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/recipes`,
-        { cache: "no-store" }
-      );
-      const data = await res.json();
-      setRecipes(data);
-      setLoading(false);
+      try {
+        const data = await apiFetch<Recipe[]>("/recipes", {
+          cache: "no-store",
+        });
+        setRecipes(data);
+      } catch {
+        // apiFetch will redirect on 401 automatically
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadRecipes();
@@ -108,24 +112,18 @@ export default function RecipesPage() {
     if (!editTarget) return;
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/recipes/${editTarget.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recipe: editForm }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Update failed");
-      }
+      await apiFetch(`/recipes/${editTarget.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          recipe: editForm,
+        }),
+      });
 
       setEditTarget(null);
 
-      // ✅ Redirect → triggers alert + closes dialog implicitly
+      // ✅ Redirect → triggers alert via search params
       router.push("/recipes?updated=1");
-    } catch (err) {
+    } catch {
       setAlert({
         open: true,
         severity: "error",
@@ -134,24 +132,18 @@ export default function RecipesPage() {
     }
   }
 
-
   // For deleting recipes
   async function handleDeleteConfirm() {
     if (!deleteTarget) return;
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/recipes/${deleteTarget.id}`,
-        { method: "DELETE" }
-      );
-
-      if (!res.ok) {
-        throw new Error("Delete failed");
-      }
+      await apiFetch(`/recipes/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
 
       // ✅ Redirect → page refetches
       router.push("/recipes?deleted=1");
-    } catch (err) {
+    } catch {
       setAlert({
         open: true,
         severity: "error",
@@ -162,45 +154,53 @@ export default function RecipesPage() {
     }
   }
 
-
   // For editing ingredient quantities
   async function handleIngredientsSave(recipe: Recipe) {
-  for (const ri of recipe.recipe_ingredients) {
-    const draft = ingredientDrafts[ri.id];
+    try {
+      for (const ri of recipe.recipe_ingredients) {
+        const draft = ingredientDrafts[ri.id];
 
-    if (draft === undefined || draft === "") continue;
+        if (draft === undefined || draft === "") continue;
 
-    await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipe.id}/recipe_ingredients/${ri.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipe_ingredient: {
-            quantity: Number(draft),
-          },
-        }),
+        await apiFetch(
+          `/recipes/${recipe.id}/recipe_ingredients/${ri.id}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              recipe_ingredient: {
+                quantity: Number(draft),
+              },
+            }),
+          }
+        );
       }
-    );
-  }
 
-  // Update UI
-    setRecipes((prev) =>
-      prev.map((r) =>
-        r.id === recipe.id
-          ? {
-              ...r,
-              recipe_ingredients: r.recipe_ingredients.map((ri) => ({
-                ...ri,
-                quantity: Number(ingredientDrafts[ri.id] ?? ri.quantity),
-              })),
-            }
-          : r
-      )
-    );
+      // ✅ Update UI optimistically
+      setRecipes((prev) =>
+        prev.map((r) =>
+          r.id === recipe.id
+            ? {
+                ...r,
+                recipe_ingredients: r.recipe_ingredients.map((ri) => ({
+                  ...ri,
+                  quantity: Number(
+                    ingredientDrafts[ri.id] ?? ri.quantity
+                  ),
+                })),
+              }
+            : r
+        )
+      );
 
-    setIsEditingIngredients(false);
-    setIngredientDrafts({});
+      setIsEditingIngredients(false);
+      setIngredientDrafts({});
+    } catch {
+      setAlert({
+        open: true,
+        severity: "error",
+        message: "Failed to update ingredients",
+      });
+    }
   }
 
   // For deleting ingredients from a recipe
@@ -232,7 +232,7 @@ export default function RecipesPage() {
   //   );
   // }
 
-const filteredRecipes = recipes
+  const filteredRecipes = recipes
     .filter((recipe) => {
       if (
         search &&

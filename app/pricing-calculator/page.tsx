@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
+import { apiFetch } from "@/app/lib/api";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import { SelectOption } from "@/app/components/ui/types";
 import { Stack } from "@mui/material";
@@ -25,12 +26,17 @@ export default function PricingCalculatorPage() {
   // Load products
   useEffect(() => {
     async function loadProducts() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/products`,
-        { cache: "no-store" }
-      );
-      const data = await res.json();
-      setProducts(data);
+      try {
+        const data = await apiFetch<Product[]>("/products", {
+          cache: "no-store",
+        });
+
+        if (!data) return; // safety (204 / redirect case)
+
+        setProducts(data);
+      } catch (err) {
+        console.error("Failed to load products", err);
+      }
     }
 
     loadProducts();

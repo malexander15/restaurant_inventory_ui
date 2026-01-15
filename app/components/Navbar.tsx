@@ -1,14 +1,27 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { Tooltip } from "@mui/material";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  if (pathname === "/login") return null
+
+  async function handleLogout() {
+    document.cookie = "token=; Max-Age=0; path=/"
+    router.push("/login")
+  }
+
   return (
     <nav className="border-b bg-black">
-      <div className="max-w-1xl mx-auto px-6 py-4 flex gap-8">
+      <div className="max-w-1xl mx-auto px-6 py-4 flex items-center gap-8">
+        {/* Logo */}
         <Link href="/" className="hover:opacity-80 transition">
           <Image
             src="/iStockLogo.png"
@@ -19,6 +32,7 @@ export default function Navbar() {
             priority
           />
         </Link>
+
         {/* Products */}
         <div className="relative group">
           <span className="font-semibold cursor-pointer">
@@ -94,20 +108,28 @@ export default function Navbar() {
             </Link>
           </div>
         </div>
+
         {/* Pricing Calculator */}
         <div className="h-5 w-px bg-gray-700 mx-2" />
-          <Tooltip title="Calculate Menu Pricing Cost" arrow>
+        <Tooltip title="Calculate Menu Pricing Cost" arrow>
           <Link
             href="/pricing-calculator"
-            className="
-              flex items-center justify-center
-              text-gray-300 hover:text-white
-              transition
-            "
+            className="flex items-center justify-center text-gray-300 hover:text-white transition"
           >
             <CalculateIcon fontSize="medium" />
           </Link>
         </Tooltip>
+
+        {/* Spacer pushes logout right */}
+        <div className="flex-1" />
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="text-sm hover:text-red-300 transition"
+        >
+          Logout
+        </button>
       </div>
     </nav>
   );

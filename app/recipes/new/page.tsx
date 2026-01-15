@@ -11,6 +11,7 @@ import AppButton from "@/app/components/ui/AppButton";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import AppAlert from "@/app/components/ui/AppAlert";
 import NewRecipePageSkeleton from "@/app/recipes/new/NewRecipePageSkeleton";
+import { apiFetch } from "@/app/lib/api";
 
 type Product = {
   id: number;
@@ -21,6 +22,12 @@ type Product = {
 type PreppedRecipe = {
   id: number;
   name: string;
+};
+
+type Recipe = {
+  id: number;
+  name: string;
+  recipe_type: "menu_item" | "prepped_item";
 };
 
 type IngredientOption = {
@@ -78,56 +85,43 @@ export default function NewRecipePage() {
 
 
   function handleChange(
-  e: React.ChangeEvent<HTMLInputElement>
-  ) {
-  const { name, type, checked, value } = e.target;
+    e: React.ChangeEvent<HTMLInputElement>
+    ) {
+    const { name, type, checked, value } = e.target;
 
-  setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-  });
-  }
+    setForm({
+        ...form,
+        [name]: type === "checkbox" ? checked : value,
+    });
+    }
 
+  // Confirm and save new recipe
   async function handleConfirmSave() {
     setSubmitting(true);
     setErrorAlert(null);
 
     try {
       // 1️⃣ Create recipe
-      const recipeRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/recipes`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recipe: {
-              name: form.name,
-              recipe_type: form.is_prepped
-                ? "prepped_item"
-                : "menu_item",
-            },
-          }),
-        }
-      );
-
-      if (!recipeRes.ok) {
-        const data = await recipeRes.json();
-        throw new Error(
-          data.errors?.[0] || "Failed to create recipe"
-        );
-      }
-
-      const recipe = await recipeRes.json();
+      const recipe = await apiFetch<Recipe>("/recipes", {
+        method: "POST",
+        body: JSON.stringify({
+          recipe: {
+            name: form.name,
+            recipe_type: form.is_prepped
+              ? "prepped_item"
+              : "menu_item",
+          },
+        }),
+      });
 
       // 2️⃣ Create recipe ingredients
       for (const key of selectedIngredients) {
         const [ingredientType, id] = key.split("-");
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipe.id}/recipe_ingredients`,
+        await apiFetch(
+          `/recipes/${recipe.id}/recipe_ingredients`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               recipe_ingredient: {
                 ingredient_id: Number(id),
@@ -137,43 +131,38 @@ export default function NewRecipePage() {
             }),
           }
         );
-
-        if (!res.ok) {
-          throw new Error("Failed to save ingredients");
-        }
       }
 
-      // ✅ Success → redirect with URL alert
       router.push("/recipes?created=1");
     } catch (err: any) {
-      setErrorAlert(err.message);
+      setErrorAlert(err.message || "Failed to create recipe");
       setConfirmOpen(false);
     } finally {
       setSubmitting(false);
     }
   }
 
-
+  // Form validation
   function validate() {
-  if (!form.name.trim()) {
-    setErrorAlert("Recipe name is required");
-    return false;
-  }
-
-  if (selectedIngredients.length === 0) {
-    setErrorAlert("Please select at least one ingredient");
-    return false;
-  }
-
-  for (const key of selectedIngredients) {
-    if (!quantities[key] || quantities[key] <= 0) {
-      setErrorAlert("All ingredients must have a quantity");
+    if (!form.name.trim()) {
+      setErrorAlert("Recipe name is required");
       return false;
     }
-  }
 
-  return true;
-}
+    if (selectedIngredients.length === 0) {
+      setErrorAlert("Please select at least one ingredient");
+      return false;
+    }
+
+    for (const key of selectedIngredients) {
+      if (!quantities[key] || quantities[key] <= 0) {
+        setErrorAlert("All ingredients must have a quantity");
+        return false;
+      }
+    }
+
+    return true;
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -184,17 +173,14 @@ export default function NewRecipePage() {
     setConfirmOpen(true);
   }
 
-
-
+  // Load ingredient options
   useEffect(() => {
     async function loadIngredients() {
       try {
-        // Always load products
-        const productsRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/products`,
-          { cache: "no-store" }
-        );
-        const products: Product[] = await productsRes.json();
+        // 1️⃣ Load products
+        const products = await apiFetch<Product[]>("/products", {
+          cache: "no-store",
+        });
 
         let options: IngredientOption[] = products.map((p) => ({
           id: p.id,
@@ -203,13 +189,12 @@ export default function NewRecipePage() {
           unit: p.unit,
         }));
 
-        // Only load prepped recipes if NOT a prepped item
+        // 2️⃣ Load prepped recipes (only if NOT prepped)
         if (!form.is_prepped) {
-          const recipesRes = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/recipes?recipe_type=prepped_item`,
+          const prepped = await apiFetch<PreppedRecipe[]>(
+            "/recipes?recipe_type=prepped_item",
             { cache: "no-store" }
           );
-          const prepped: PreppedRecipe[] = await recipesRes.json();
 
           options = options.concat(
             prepped.map((r) => ({
@@ -233,6 +218,8 @@ export default function NewRecipePage() {
     loadIngredients();
   }, [form.is_prepped]);
 
+
+  // Skeleton loading state
   if (loading) {
     return <NewRecipePageSkeleton />;
   }

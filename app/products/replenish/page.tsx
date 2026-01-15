@@ -7,6 +7,7 @@ import ReplenishPageSkeleton from "@/app/products/replenish/ReplenishPageSkeleto
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import { FormControl, Snackbar, Alert, ListSubheader } from "@mui/material";
 import { SelectOption } from "@/app/components/ui/types";
+import { apiFetch } from "@/app/lib/api";
 
 type Product = {
   id: number;
@@ -27,20 +28,25 @@ export default function ReplenishInventoryPage() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   
+    useEffect(() => {
+      async function loadProducts() {
+        try {
+          const data = await apiFetch<Product[]>(
+            "/products",
+            { cache: "no-store" }
+          );
 
-  useEffect(() => {
-    async function loadProducts() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/products`,
-        { cache: "no-store" }
-      );
-      const data = await res.json();
-      setProducts(data);
-      setLoading(false);
-    }
+          setProducts(data);
+        } catch (err) {
+          setAlert({
+            type: "error",
+            message: "Failed to load products",
+          });
+        }
+      }
 
-    loadProducts();
-  }, []);
+      loadProducts();
+    }, []);
 
   const groupedProductOptions = Object.entries(
     products.reduce<Record<string, SelectOption<number>[]>>(
@@ -97,20 +103,18 @@ export default function ReplenishInventoryPage() {
         return;
       }
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/products/${productId}/replenish`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ quantity: qty }),
-        }
-      );
-
-      if (!res.ok) {
-        const data = await res.json();
+      try {
+        await apiFetch(
+          `/products/${productId}/replenish`,
+          {
+            method: "POST",
+            body: JSON.stringify({ quantity: qty }),
+          }
+        );
+      } catch (err) {
         setAlert({
           type: "error",
-          message: data.error || `Failed to replenish ${product.name}`,
+          message: `Failed to replenish ${product.name}`,
         });
         return;
       }

@@ -26,6 +26,7 @@ import InputSkeleton from "../components/ui/skeletons/InputSkeleton";
 import { AppSelect } from "../components/ui/AppSelect";
 import { useRef } from "react";
 import ProductPageSkeleton from "./ProductPageSkeleton";
+import { apiFetch }  from "@/app/lib/api";
 
 type Product = {
   id: number
@@ -115,18 +116,14 @@ export default function ProductsPage() {
   // ✅ fetch products in an effect
   useEffect(() => {
     async function loadProducts() {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/products`,
-        { cache: "no-store" }
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch products");
+      try {
+        const data = await apiFetch<Product[]>("/products");
+        setProducts(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-
-      const data = await res.json();
-      setProducts(data);
-      setLoading(false);
     }
 
     loadProducts();
@@ -181,31 +178,26 @@ const filteredProducts = products
     return costSort === "asc" ? aCost - bCost : bCost - aCost;
   });
 
-
   async function handleDelete() {
-  if (!deleteTarget) return;
+    if (!deleteTarget) return;
 
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/products/${deleteTarget.id}`,
-      { method: "DELETE" }
-    );
+    try {
+      await apiFetch(`/products/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
 
-    if (!res.ok) {
-      throw new Error("Delete failed");
-    }
+      // Optimistic UI update
+      setProducts((prev) =>
+        prev.filter((p) => p.id !== deleteTarget.id)
+      );
 
-    // Remove from UI
-    setProducts((prev) =>
-      prev.filter((p) => p.id !== deleteTarget.id)
-    );
-
-    setSnackbar({
-      open: true,
-      severity: "success",
-      message: `"${deleteTarget.name}" was deleted successfully`,
-    });
-    } catch {
+      setSnackbar({
+        open: true,
+        severity: "success",
+        message: `"${deleteTarget.name}" was deleted successfully`,
+      });
+    } catch (err) {
+      console.error(err);
       setSnackbar({
         open: true,
         severity: "error",
@@ -220,11 +212,10 @@ const filteredProducts = products
   if (!editTarget) return;
 
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/products/${editTarget.id}`,
+    const updated = await apiFetch<Product>(
+      `/products/${editTarget.id}`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           product: {
             name: editForm.name,
@@ -236,10 +227,6 @@ const filteredProducts = products
         }),
       }
     );
-
-    if (!res.ok) throw new Error("Update failed");
-
-    const updated = await res.json();
 
     setProducts((prev) =>
       prev.map((p) => (p.id === updated.id ? updated : p))
@@ -587,4 +574,3 @@ const filteredProducts = products
     </div>
   )
 }
-
