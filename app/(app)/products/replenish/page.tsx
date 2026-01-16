@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppInput from "@/app/components/ui/AppInput";
-import ReplenishPageSkeleton from "@/app/products/replenish/ReplenishPageSkeleton";
+import ReplenishPageSkeleton from "@/app/(app)/products/replenish/ReplenishPageSkeleton";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import { FormControl, Snackbar, Alert, ListSubheader } from "@mui/material";
 import { SelectOption } from "@/app/components/ui/types";

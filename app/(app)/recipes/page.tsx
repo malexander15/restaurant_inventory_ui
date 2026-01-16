@@ -14,13 +14,13 @@ import {
   Popover,
   Divider,
 } from "@mui/material";
-import AppInput from "../components/ui/AppInput";
-import AppButton from "../components/ui/AppButton";
-import AppAlert from "../components/ui/AppAlert";
-import ConfirmDialog from "../components/ui/ConfirmDialog";
-import { AppSelect } from "../components/ui/AppSelect";
+import AppInput from "../../components/ui/AppInput";
+import AppButton from "../../components/ui/AppButton";
+import AppAlert from "../../components/ui/AppAlert";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { AppSelect } from "../../components/ui/AppSelect";
 import RecipePageSkeleton from "./RecipePageSkeleton";
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "../../lib/api";
 
 
 type Recipe = {

@@ -6,7 +6,7 @@ import { FormControl } from "@mui/material";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
 import AppInput from "@/app/components/ui/AppInput";
-import DepleteInventoryPageSkeleton from "@/app/recipes/deplete/DepleteInventoryPageSkeleton";
+import DepleteInventoryPageSkeleton from "@/app/(app)/recipes/deplete/DepleteInventoryPageSkeleton";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import { apiFetch } from "@/app/lib/api"
 import Papa from "papaparse";

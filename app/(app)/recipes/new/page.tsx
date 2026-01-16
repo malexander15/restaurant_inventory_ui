@@ -10,7 +10,7 @@ import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import AppAlert from "@/app/components/ui/AppAlert";
-import NewRecipePageSkeleton from "@/app/recipes/new/NewRecipePageSkeleton";
+import NewRecipePageSkeleton from "@/app/(app)/recipes/new/NewRecipePageSkeleton";
 import { apiFetch } from "@/app/lib/api";
 
 type Product = {
