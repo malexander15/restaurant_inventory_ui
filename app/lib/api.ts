@@ -1,7 +1,6 @@
-// app/lib/api.ts
 export async function apiFetch<T = any>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit & { skipAuth?: boolean } = {}
 ): Promise<T> {
   const token = document.cookie
     .split("; ")
@@ -10,28 +9,33 @@ export async function apiFetch<T = any>(
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(!options.skipAuth && token
+      ? { Authorization: `Bearer ${token}` }
+      : {}),
     ...options.headers,
   };
 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}${url}`,
-    { ...options, headers }
+    {
+      ...options,
+      headers,
+    }
   );
 
-  // 🔐 auth guard
-  if (res.status === 401) {
+  // 🔐 auth guard (only if not skipped)
+  if (res.status === 401 && !options.skipAuth) {
     window.location.href = "/login";
     throw new Error("Unauthorized");
   }
 
-  // ❌ other errors
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.error || "Request failed");
+    throw new Error(
+      error.error || error.errors?.[0] || "Request failed"
+    );
   }
 
-  // 🧼 DELETE / empty responses
   if (res.status === 204) {
     return null as T;
   }

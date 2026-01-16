@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
+import { apiFetch } from '@/app/lib/api'
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,20 +21,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
-      }
+      const data = await apiFetch("/login", {
+        method: "POST",
+        skipAuth: true,
+        body: JSON.stringify({ email, password }),
+      });
 
       // 🔐 Save token
       document.cookie = `token=${data.token}; path=/`;
@@ -90,6 +82,15 @@ export default function LoginPage() {
             {loading ? "Signing in…" : "Sign In"}
           </AppButton>
         </form>
+        <div className="pt-2 text-center">
+          <button
+            type="button"
+            onClick={() => router.push("/signup")}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Don’t have an account? Create one
+          </button>
+        </div>
       </div>
     </div>
   );
