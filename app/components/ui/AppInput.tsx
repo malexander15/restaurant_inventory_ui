@@ -29,7 +29,7 @@ type AppInputProps = {
   step?: number;
 
   fullWidth?: boolean;
-};
+} & Omit<React.ComponentProps<typeof TextField>, "onChange" | "value">;
 
 export default function AppInput({
   label,
@@ -50,9 +50,11 @@ export default function AppInput({
   step,
   fullWidth = true,
   inputPadding,
+  ...rest
 }: AppInputProps) {
   return (
     <TextField
+      {...rest}
       fullWidth={fullWidth}
       label={label}
       margin="dense"

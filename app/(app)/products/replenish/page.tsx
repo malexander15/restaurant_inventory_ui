@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AppInput from "@/app/components/ui/AppInput";
 import ReplenishPageSkeleton from "@/app/(app)/products/replenish/ReplenishPageSkeleton";
@@ -27,7 +27,10 @@ export default function ReplenishInventoryPage() {
     message: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
-  
+  const [barcode, setBarcode] = useState("");
+  const [unknownBarcodes, setUnknownBarcodes] = useState<string[]>([]);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
       async function loadProducts() {
         try {
@@ -124,6 +127,35 @@ export default function ReplenishInventoryPage() {
     router.push("/products?replenished=1");
   }
 
+  async function handleBarcodeScan(code: string) {
+    console.log("Scanned:", code);
+    if (!code) return;
+
+    try {
+      const product = await apiFetch<Product & { id: number }>(
+        `/products/by-barcode/${encodeURIComponent(code)}`
+      );
+
+      // ✅ Stage product if not already selected
+      setSelectedProductIds((prev) =>
+        prev.includes(product.id) ? prev : [...prev, product.id]
+      );
+    } catch {
+      // ❌ Unknown barcode
+      setUnknownBarcodes((prev) =>
+        prev.includes(code) ? prev : [...prev, code]
+      );
+    } finally {
+      setTimeout(() => {
+        barcodeInputRef.current?.focus();
+      }, 0);
+    }
+  }
+
+  useEffect(() => {
+    barcodeInputRef.current?.focus();
+  }, [])
+
   if (loading) {
     return <ReplenishPageSkeleton />;
   }
@@ -146,7 +178,7 @@ export default function ReplenishInventoryPage() {
           </Alert>
         </Snackbar>
       )}
-      <h1 className="text-3xl font-bold mb-6">
+      <h1 className="flex justify-center text-3xl font-bold mb-6">
         Inventory Replenishment
       </h1>
 
@@ -156,6 +188,30 @@ export default function ReplenishInventoryPage() {
         </div>
       )}
 
+      <p className="text-sm text-center text-gray-400 mb-4">
+        To replenish inventory, you can manually select products from the list, or scan product barcodes.
+        When a barcode is scanned or entered, the matching product will be automatically added to the 
+        replenishment list if it exists in the system.
+      </p>
+
+      <div className="flex justify-center mb-3">
+        <AppInput
+          inputRef={barcodeInputRef}
+          label="Scan Barcode (or type)"
+          fullWidth={false}
+          value={barcode}
+          onChange={(val) => setBarcode(val)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.stopPropagation();
+              handleBarcodeScan(barcode.trim());
+              setBarcode("");
+            }
+          }}
+          placeholder="Scan item barcode"
+        />
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4 border rounded p-4">
         <FormControl fullWidth>
           <AppSelect<number>
@@ -196,7 +252,6 @@ export default function ReplenishInventoryPage() {
           );
         })}
 
-
         <button
           type="submit"
           className="
@@ -208,6 +263,30 @@ export default function ReplenishInventoryPage() {
           Replenish Inventory
         </button>
       </form>
+      {unknownBarcodes.length > 0 && (
+        <div className="mt-6 border rounded p-4">
+          <h3 className="font-semibold mb-2">
+            Unknown Barcodes
+          </h3>
+
+          <ul className="text-sm space-y-1">
+            {unknownBarcodes.map((code) => (
+              <li key={code} className="flex justify-between">
+                <span>{code}</span>
+                <button
+                  type="button"
+                  className="text-blue-500 hover:underline"
+                  onClick={() => {
+                    router.push(`/products/new?barcode=${code}`);
+                  }}
+                >
+                  Create Product
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
