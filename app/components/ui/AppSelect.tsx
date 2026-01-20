@@ -10,7 +10,6 @@ import {
   ListSubheader,
 } from "@mui/material";
 import { GroupedSelectOption, SelectOption } from "./types";
-import React from "react";
 
 type AppSelectProps<T extends string | number = string> = {
   label: string;
@@ -96,6 +95,7 @@ export function AppSelect<T extends string | number = string>({
         sx={{
           "& .MuiSelect-select": {
             color: "white",
+            padding: "10.5px 6px"
           },
           "& .MuiOutlinedInput-notchedOutline": {
             borderColor: "#444",
