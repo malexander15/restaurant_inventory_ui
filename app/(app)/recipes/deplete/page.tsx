@@ -6,6 +6,7 @@ import { FormControl } from "@mui/material";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
 import AppInput from "@/app/components/ui/AppInput";
+import AppAlert from "@/app/components/ui/AppAlert";
 import DepleteInventoryPageSkeleton from "@/app/(app)/recipes/deplete/DepleteInventoryPageSkeleton";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import { apiFetch } from "@/app/lib/api"
@@ -15,14 +16,6 @@ type Recipe = {
   id: number;
   name: string;
 };
-
-type StagedDepletion = {
-  recipe_id: number;
-  recipe_name: string;
-  quantity: number;
-  source: "csv";
-};
-
 
 export default function DepleteInventoryPage() {
   const router = useRouter();
@@ -34,15 +27,20 @@ export default function DepleteInventoryPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [alert, setAlert] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info" | "warning";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const selectedRecipes = recipes.filter((r) =>
     selectedRecipeIds.includes(r.id)
   );
   const [csvRows, setCsvRows] = useState<any[]>([]);
-  const [csvError, setCsvError] = useState<string | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [csvStagedItems, setCsvStagedItems] = useState<StagedDepletion[]>( []);
   const [csvParsed, setCsvParsed] = useState(false);
   const [csvApplied, setCsvApplied] = useState(false);
   const [showAllUnmatched, setShowAllUnmatched] = useState(false);
@@ -72,10 +70,8 @@ export default function DepleteInventoryPage() {
   //Validate submission data and open dialog box to confirm submission
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     if (!validate()) return;
-
     setConfirmOpen(true);
   }
 
@@ -153,7 +149,6 @@ export default function DepleteInventoryPage() {
   //Handles the POST of the depleting product inventory by mean of Menu Item Recipes
   async function handleConfirmDeplete() {
     setSubmitting(true);
-    setError(null);
 
     try {
       for (const recipe of selectedRecipes) {
@@ -163,19 +158,19 @@ export default function DepleteInventoryPage() {
           throw new Error(`Invalid quantity for ${recipe.name}`);
         }
 
-        await apiFetch(
-          `/recipes/${recipe.id}/deplete`,
-          {
-            method: "POST",
-            body: JSON.stringify({ quantity: qty }),
-          }
-        );
+        await apiFetch(`/recipes/${recipe.id}/deplete`, {
+          method: "POST",
+          body: JSON.stringify({ quantity: qty }),
+        });
       }
 
-      // ✅ success → redirect
       router.push("/products/?depleted=1");
     } catch (err: any) {
-      setError(err.message || "Failed to deplete inventory");
+      setAlert({
+        open: true,
+        severity: "error",
+        message: err.message || "Failed to deplete inventory",
+      });
       setConfirmOpen(false);
     } finally {
       setSubmitting(false);
@@ -187,13 +182,21 @@ export default function DepleteInventoryPage() {
   //A quantity asscoiated with each menu item
   function validate() {
     if (selectedRecipes.length === 0) {
-      setError("Please select at least one menu item");
+      setAlert({
+        open: true,
+        severity: "error",
+        message: "Please select at least one menu item",
+      });
       return false;
     }
 
     for (const recipe of selectedRecipes) {
       if (!quantities[recipe.id] || quantities[recipe.id] <= 0) {
-        setError(`Please enter a quantity for ${recipe.name}`);
+        setAlert({
+          open: true,
+          severity: "error",
+          message: `Please enter a valid quantity for ${recipe.name}`,
+        });
         return false;
       }
     }
@@ -231,7 +234,6 @@ export default function DepleteInventoryPage() {
     if (!file) return;
 
     setCsvFile(file);
-    setCsvError(null);
 
     Papa.parse(file, {
       header: true,
@@ -241,21 +243,15 @@ export default function DepleteInventoryPage() {
         setCsvParsed(true);
       },
       error: (error) => {
-        setCsvError(`CSV parsing error: ${error.message}`);
+        setAlert({
+          open: true,
+          severity: "error",
+          message: `CSV parsing error: ${error.message}`,
+        });
       },
     });
     setCsvParsed(false);
   }
-
-  useEffect(() => {
-    if (!csvParsed) return;
-
-    console.log("CSV keys:", Object.keys(csvDepletions));
-    console.log(
-      "Recipe names:",
-      recipes.map((r) => normalizeName(r.name))
-    );
-  }, [csvParsed, csvDepletions, recipes]);
 
   if (loading) {
     return <DepleteInventoryPageSkeleton />;
@@ -263,22 +259,17 @@ export default function DepleteInventoryPage() {
 
   return (
     <div className="max-w-md mx-auto p-6">
+      <AppAlert
+        open={alert.open}
+        severity={alert.severity}
+        message={alert.message}
+        onClose={() =>
+          setAlert((prev) => ({ ...prev, open: false }))
+        }
+      />
       <h1 className="text-3xl font-bold mb-6">
         Manual Inventory Depletion
       </h1>
-
-      {error && (
-        <div className="mb-4 border border-red-200 bg-red-50/50 p-3 rounded text-red-700 text-sm">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="mb-4 border border-green-200 bg-green-50/50 p-3 rounded text-green-700 text-sm">
-          {success}
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-4 border rounded p-4">
         <div>
           <FormControl fullWidth>
@@ -351,9 +342,6 @@ export default function DepleteInventoryPage() {
           Upload CSV
         </AppButton>
 
-        {csvError && (
-          <p className="text-sm text-red-500">{csvError}</p>
-        )}
       </div>
       {csvParsed && (
         <div className="border rounded p-3 text-sm space-y-1 bg-white/5">
