@@ -6,7 +6,8 @@ import AppInput from "@/app/components/ui/AppInput";
 import ReplenishPageSkeleton from "@/app/(app)/products/replenish/ReplenishPageSkeleton";
 import { AppSelect } from "@/app/components/ui/AppSelect";
 import AppButton from "@/app/components/ui/AppButton";
-import { FormControl, Snackbar, Alert, IconButton, Tooltip } from "@mui/material";
+import AppAlert from "@/app/components/ui/AppAlert";
+import { IconButton, Tooltip } from "@mui/material";
 import { SelectOption } from "@/app/components/ui/types";
 import { apiFetch } from "@/app/lib/api";
 import CancelIcon from "@mui/icons-material/Cancel"
@@ -18,16 +19,18 @@ type Product = {
   category: string;
 };
 
+type AlertState = {
+  type: "success" | "error" | "info" | "warning";
+  message: string;
+  variant: "outlined" | "filled" | "standard"
+} | null;
+
 export default function ReplenishInventoryPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [alert, setAlert] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const [alert, setAlert] = useState<AlertState>(null);
   const [loading, setLoading] = useState(false);
   const [barcode, setBarcode] = useState("");
     type UnknownProductDraft = {
@@ -52,6 +55,7 @@ export default function ReplenishInventoryPage() {
           setAlert({
             type: "error",
             message: "Failed to load products",
+            variant: "filled"
           });
         }
       }
@@ -89,12 +93,24 @@ export default function ReplenishInventoryPage() {
     });
 
   async function replenishKnownProducts() {
+    if (selectedProductIds.length === 0) {
+      throw new Error("No products selected");
+    }
+
     for (const productId of selectedProductIds) {
       const product = products.find((p) => p.id === productId);
       const qty = quantities[productId];
 
-      if (!product || !qty || qty <= 0) {
-        throw new Error("Invalid quantity");
+      if (!qty) {
+        throw new Error(
+          `Quantity is required for ${product?.name || "a product"}`
+        );
+      }
+
+      if (qty <= 0) {
+        throw new Error(
+          `Quantity must be greater than zero for ${product?.name || "a product"}`
+        );
       }
 
       await apiFetch(`/products/${productId}/replenish`, {
@@ -111,10 +127,11 @@ export default function ReplenishInventoryPage() {
     try {
       await replenishKnownProducts();
       router.push("/products?replenished=1");
-    } catch {
+    } catch (err: any) {
       setAlert({
         type: "error",
-        message: "Failed to replenish inventory",
+        message: err.message || "Failed to replenish inventory",
+        variant: "filled"
       });
     }
   }
@@ -131,36 +148,40 @@ export default function ReplenishInventoryPage() {
       );
 
       router.push("/products/new");
-    } catch {
+    } catch (err: any) {
       setAlert({
         type: "error",
-        message: "Failed to process inventory",
+        message: err.message || "Failed to process inventory",
+        variant: "standard"
       });
     }
   }
 
-
   async function handleBarcodeScan(code: string) {
-    console.log("Scanned:", code);
-    if (!code) return;
+    if (!code.trim()) {
+      setAlert({
+        type: "warning",
+        message: "Barcode cannot be empty",
+        variant: "standard"
+      });
+      return;
+    }
 
     try {
       const product = await apiFetch<Product & { id: number }>(
         `/products/by-barcode/${encodeURIComponent(code)}`
       );
 
-      // ✅ Stage product if not already selected
       setSelectedProductIds((prev) =>
         prev.includes(product.id) ? prev : [...prev, product.id]
       );
-      } catch {
-        setUnknownProducts((prev) =>
-          prev.some((p) => p.barcode === code)
-            ? prev
-            : [...prev, { barcode: code, name: "" }]
-        );
-
-      } finally {
+    } catch {
+      setUnknownProducts((prev) =>
+        prev.some((p) => p.barcode === code)
+          ? prev
+          : [...prev, { barcode: code, name: "" }]
+      );
+    } finally {
       setTimeout(() => {
         barcodeInputRef.current?.focus();
       }, 0);
@@ -187,31 +208,17 @@ export default function ReplenishInventoryPage() {
 
   return (
     <div className="max-w-md mx-auto p-6">
-      {alert && (
-        <Snackbar
-          open
-          autoHideDuration={6000}
-          onClose={() => setAlert(null)}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Alert
-            severity={alert.type}
-            onClose={() => setAlert(null)}
-            sx={{ width: "100%" }}
-          >
-            {alert.message}
-          </Alert>
-        </Snackbar>
-      )}
+    {alert && (
+      <AppAlert
+        open
+        severity={alert.type}
+        message={alert.message}
+        onClose={() => setAlert(null)}
+      />
+    )}
       <h1 className="flex justify-center text-3xl font-bold mb-6">
         Inventory Replenishment
       </h1>
-
-      {error && (
-        <div className="mb-4 border border-red-200 bg-red-50/50 p-3 rounded text-red-700 text-sm">
-          {error}
-        </div>
-      )}
 
       <p className="text-sm text-center text-gray-400 mb-4">
         To replenish inventory, you can manually select products from the list, or scan product barcodes.
@@ -238,7 +245,6 @@ export default function ReplenishInventoryPage() {
         />
       </div>
       <form onSubmit={handleSubmit} className="space-y-4 border rounded p-4">
-        <FormControl fullWidth>
           <AppSelect<number>
             label="Select Products"
             options={groupedProductOptions}
@@ -251,8 +257,6 @@ export default function ReplenishInventoryPage() {
             multiple
             checkbox
           />
-        </FormControl>
-
         {selectedProductIds.map((productId) => {
           const product = products.find((p) => p.id === productId);
           if (!product) return null;

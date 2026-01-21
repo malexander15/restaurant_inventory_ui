@@ -6,6 +6,7 @@ type AppAlertProps = {
   open: boolean;
   message: string;
   severity?: "success" | "error" | "info" | "warning";
+  variant?: "outlined" | "filled" | "standard";
   onClose: () => void;
   autoHideDuration?: number;
 };
@@ -14,6 +15,7 @@ export default function AppAlert({
   open,
   message,
   severity = "success",
+  variant = "standard",
   onClose,
   autoHideDuration = 3000,
 }: AppAlertProps) {
@@ -27,14 +29,7 @@ export default function AppAlert({
       <Alert
         onClose={onClose}
         severity={severity}
-        sx={{
-          backgroundColor: "#262626",
-          color: "white",
-          border: "1px solid #333",
-          "& .MuiAlert-icon": {
-            color: "white",
-          },
-        }}
+        variant={variant}
       >
         {message}
       </Alert>
