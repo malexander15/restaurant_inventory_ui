@@ -11,7 +11,6 @@ import {
    Tooltip,
    Popover,
    Divider,
-   Skeleton,
   } 
 from "@mui/material";
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
@@ -21,7 +20,6 @@ import AppAlert from "@/app/components/ui/AppAlert";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import AppButton from "../../components/ui/AppButton";
 import AppInput from "../../components/ui/AppInput";
-import ListSkeleton from "../../components/ui/skeletons/ListSkeleton";
 import InputSkeleton from "../../components/ui/skeletons/InputSkeleton";
 import { AppSelect } from "../../components/ui/AppSelect";
 import { useRef } from "react";
@@ -51,10 +49,10 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [snackbar, setSnackbar] = useState<{
+  const [alert, setAlert] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error";
+    severity: "success" | "error" | "info" | "warning";
   }>({
     open: false,
     message: "",
@@ -82,7 +80,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     if (searchParams.get("replenished") === "1") {
-      setSnackbar({
+      setAlert({
         open: true,
         severity: "success",
         message: "Inventory replenished successfully!",
@@ -90,7 +88,7 @@ export default function ProductsPage() {
     }
 
     if (searchParams.get("deleted") === "1") {
-      setSnackbar({
+      setAlert({
         open: true,
         severity: "success",
         message: "Product deleted successfully!",
@@ -98,14 +96,14 @@ export default function ProductsPage() {
     }
 
     if (searchParams.get("created") === "1") {
-      setSnackbar({
+      setAlert({
         open: true,
         severity: "success",
         message: "Product created successfully!",
       });
     }
     if (searchParams.get("depleted") === "1") {
-    setSnackbar({
+    setAlert({
       open: true,
       severity: "success",
       message: "Inventory successfully depleted!",
@@ -191,14 +189,14 @@ const filteredProducts = products
         prev.filter((p) => p.id !== deleteTarget.id)
       );
 
-      setSnackbar({
+      setAlert({
         open: true,
         severity: "success",
         message: `"${deleteTarget.name}" was deleted successfully`,
       });
     } catch (err) {
       console.error(err);
-      setSnackbar({
+      setAlert({
         open: true,
         severity: "error",
         message: "Failed to delete product",
@@ -232,13 +230,13 @@ const filteredProducts = products
       prev.map((p) => (p.id === updated.id ? updated : p))
     );
 
-    setSnackbar({
+    setAlert({
       open: true,
       severity: "success",
       message: "Product updated successfully!",
     });
     } catch {
-      setSnackbar({
+      setAlert({
         open: true,
         severity: "error",
         message: "Failed to update product",
@@ -258,11 +256,11 @@ const filteredProducts = products
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <AppAlert
-        open={snackbar.open}
-        severity={snackbar.severity}
-        message={snackbar.message}
+        open={alert.open}
+        severity={alert.severity}
+        message={alert.message}
         onClose={() => {
-          setSnackbar({ ...snackbar, open: false });
+          setAlert({ ...alert, open: false });
 
           // Optional but recommended: clear URL params
           router.replace("/products");
