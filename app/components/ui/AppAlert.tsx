@@ -25,6 +25,9 @@ export default function AppAlert({
       autoHideDuration={autoHideDuration}
       onClose={onClose}
       anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      sx={{
+        mt: 8,
+      }}
     >
       <Alert
         onClose={onClose}
