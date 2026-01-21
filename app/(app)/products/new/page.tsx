@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppSelect } from '@/app/components/ui/AppSelect';
 import AppInput from '@/app/components/ui/AppInput';
@@ -62,6 +62,27 @@ export default function NewProductPage() {
       prev.filter((_, i) => i !== index)
     );
   }
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("draft_products");
+    if (!raw) return;
+
+    const drafts: { barcode: string; name: string }[] =
+      JSON.parse(raw);
+
+    setProducts(
+      drafts.map((d) => ({
+        name: d.name || "",
+        barcode: d.barcode,
+        unit: "oz",
+        stock_quantity: "",
+        unit_cost: "",
+        category: "",
+      }))
+    );
+
+    sessionStorage.removeItem("draft_products");
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

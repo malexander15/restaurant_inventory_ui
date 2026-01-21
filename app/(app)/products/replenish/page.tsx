@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import AppInput from "@/app/components/ui/AppInput";
 import ReplenishPageSkeleton from "@/app/(app)/products/replenish/ReplenishPageSkeleton";
 import { AppSelect } from "@/app/components/ui/AppSelect";
-import { FormControl, Snackbar, Alert, ListSubheader } from "@mui/material";
+import AppButton from "@/app/components/ui/AppButton";
+import { FormControl, Snackbar, Alert, IconButton, Tooltip } from "@mui/material";
 import { SelectOption } from "@/app/components/ui/types";
 import { apiFetch } from "@/app/lib/api";
+import CancelIcon from "@mui/icons-material/Cancel"
 
 type Product = {
   id: number;
@@ -28,7 +30,13 @@ export default function ReplenishInventoryPage() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [barcode, setBarcode] = useState("");
-  const [unknownBarcodes, setUnknownBarcodes] = useState<string[]>([]);
+    type UnknownProductDraft = {
+      barcode: string;
+      name: string;
+    };
+
+  const [unknownProducts, setUnknownProducts] =
+    useState<UnknownProductDraft[]>([]);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -80,52 +88,57 @@ export default function ReplenishInventoryPage() {
       return a.group.localeCompare(b.group);
     });
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setAlert(null);
-
-    if (selectedProductIds.length === 0) {
-      setAlert({
-        type: "error",
-        message: "Products cannot be empty",
-      });
-      return;
-    }
-
+  async function replenishKnownProducts() {
     for (const productId of selectedProductIds) {
       const product = products.find((p) => p.id === productId);
       const qty = quantities[productId];
 
-      if (!product) continue;
-
-      if (!qty || qty <= 0) {
-        setAlert({
-          type: "error",
-          message: "All selected products must have a quantity",
-        });
-        return;
+      if (!product || !qty || qty <= 0) {
+        throw new Error("Invalid quantity");
       }
 
-      try {
-        await apiFetch(
-          `/products/${productId}/replenish`,
-          {
-            method: "POST",
-            body: JSON.stringify({ quantity: qty }),
-          }
-        );
-      } catch (err) {
-        setAlert({
-          type: "error",
-          message: `Failed to replenish ${product.name}`,
-        });
-        return;
-      }
+      await apiFetch(`/products/${productId}/replenish`, {
+        method: "POST",
+        body: JSON.stringify({ quantity: qty }),
+      });
     }
-
-    // ✅ SUCCESS
-    router.push("/products?replenished=1");
   }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setAlert(null);
+
+    try {
+      await replenishKnownProducts();
+      router.push("/products?replenished=1");
+    } catch {
+      setAlert({
+        type: "error",
+        message: "Failed to replenish inventory",
+      });
+    }
+  }
+
+  async function handleReplenishAndCreate() {
+    setAlert(null);
+
+    try {
+      await replenishKnownProducts();
+
+      sessionStorage.setItem(
+        "draft_products",
+        JSON.stringify(unknownProducts)
+      );
+
+      router.push("/products/new");
+    } catch {
+      setAlert({
+        type: "error",
+        message: "Failed to process inventory",
+      });
+    }
+  }
+
 
   async function handleBarcodeScan(code: string) {
     console.log("Scanned:", code);
@@ -140,17 +153,29 @@ export default function ReplenishInventoryPage() {
       setSelectedProductIds((prev) =>
         prev.includes(product.id) ? prev : [...prev, product.id]
       );
-    } catch {
-      // ❌ Unknown barcode
-      setUnknownBarcodes((prev) =>
-        prev.includes(code) ? prev : [...prev, code]
-      );
-    } finally {
+      } catch {
+        setUnknownProducts((prev) =>
+          prev.some((p) => p.barcode === code)
+            ? prev
+            : [...prev, { barcode: code, name: "" }]
+        );
+
+      } finally {
       setTimeout(() => {
         barcodeInputRef.current?.focus();
       }, 0);
     }
   }
+
+  function shipUnknownsToCreate() {
+    sessionStorage.setItem(
+      "draft_products",
+      JSON.stringify(unknownProducts)
+    );
+
+    router.push("/products/new");
+  }
+
 
   useEffect(() => {
     barcodeInputRef.current?.focus();
@@ -251,40 +276,95 @@ export default function ReplenishInventoryPage() {
               </div>
           );
         })}
+        <div className="space-y-2 mt-4">
+          {/* Replenish only */}
+          {selectedProductIds.length > 0 && unknownProducts.length === 0 && (
+            <AppButton
+              type="submit"
+              fullWidth
+              variant="primary"
+            >
+              Replenish Inventory
+            </AppButton>
+          )}
 
-        <button
-          type="submit"
-          className="
-            w-full py-2 border rounded
-            hover:bg-gray-100/10
-            transition mt-4
-          "
-        >
-          Replenish Inventory
-        </button>
+          {/* Create only */}
+          {unknownProducts.length > 0 && selectedProductIds.length === 0 && (
+            <AppButton
+              type="button"
+              fullWidth
+              variant="primary"
+              onClick={shipUnknownsToCreate}
+            >
+              Create Products ({unknownProducts.length})
+            </AppButton>
+          )}
+
+          {/* Combined action */}
+          {unknownProducts.length > 0 && selectedProductIds.length > 0 && (
+            <AppButton
+              type="button"
+              fullWidth
+              variant="primary"
+              onClick={handleReplenishAndCreate}
+            >
+              Replenish & Create Products
+            </AppButton>
+          )}
+        </div>
       </form>
-      {unknownBarcodes.length > 0 && (
-        <div className="mt-6 border rounded p-4">
-          <h3 className="font-semibold mb-2">
-            Unknown Barcodes
+      {unknownProducts.length > 0 && (
+        <div className="mt-6 border rounded p-4 space-y-3">
+          <h3 className="font-semibold">
+            Unrecognized Products
           </h3>
 
-          <ul className="text-sm space-y-1">
-            {unknownBarcodes.map((code) => (
-              <li key={code} className="flex justify-between">
-                <span>{code}</span>
-                <button
-                  type="button"
-                  className="text-blue-500 hover:underline"
-                  onClick={() => {
-                    router.push(`/products/new?barcode=${code}`);
+          <div className="space-y-2">
+            {unknownProducts.map((item, index) => (
+              <div
+                key={item.barcode}
+                className="grid grid-cols-[2fr_2fr_32px] gap-3 items-center"
+              >
+                <AppInput
+                  label=""
+                  value={item.name}
+                  onChange={(val) => {
+                    setUnknownProducts((prev) =>
+                      prev.map((p, i) =>
+                        i === index ? { ...p, name: val } : p
+                      )
+                    );
                   }}
-                >
-                  Create Product
-                </button>
-              </li>
+                  placeholder="Product name (optional)"
+                />
+
+                <AppInput
+                  label=""
+                  onChange={() => []}
+                  value={item.barcode}
+                  disabled
+                />
+
+                <Tooltip title="Remove" arrow>
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      setUnknownProducts((prev) =>
+                        prev.filter((_, i) => i !== index)
+                      )
+                    }
+                    sx={{
+                      color: "#9ca3af",
+                      "&:hover": { color: "#ef4444" },
+                      padding: "4px",
+                    }}
+                  >
+                    <CancelIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </div>

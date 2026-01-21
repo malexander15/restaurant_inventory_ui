@@ -98,6 +98,24 @@ export default function AppInput({
           "& .MuiOutlinedInput-input": {
             padding: inputPadding ?? "10.5px 14px",
           },
+          
+          //chrome browser autofill overide
+          "& input:-webkit-autofill": {
+            WebkitBoxShadow: "0 0 0 1000px #262626 inset",
+            WebkitTextFillColor: "white",
+            caretColor: "white",
+            borderRadius: "inherit",
+          },
+
+          "& input:-webkit-autofill:hover": {
+            WebkitBoxShadow: "0 0 0 1000px #262626 inset",
+            WebkitTextFillColor: "white",
+          },
+
+          "& input:-webkit-autofill:focus": {
+            WebkitBoxShadow: "0 0 0 1000px #262626 inset",
+            WebkitTextFillColor: "white",
+          },
 
           // Border
           "& fieldset": { borderColor: "#333" },
