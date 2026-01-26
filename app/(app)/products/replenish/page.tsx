@@ -230,6 +230,7 @@ export default function ReplenishInventoryPage() {
         <AppInput
           inputRef={barcodeInputRef}
           label="Scan Barcode (or type)"
+          testId="replenish-barcode-input"
           fullWidth={false}
           value={barcode}
           onChange={(val) => setBarcode(val)}
@@ -301,6 +302,7 @@ export default function ReplenishInventoryPage() {
               type="button"
               fullWidth
               intent="primary"
+              data-testid="create-products-from-barcode"
               onClick={shipUnknownsToCreate}
             >
               Create Products ({unknownProducts.length})
@@ -321,7 +323,10 @@ export default function ReplenishInventoryPage() {
         </div>
       </form>
       {unknownProducts.length > 0 && (
-        <div className="mt-6 border rounded p-4 space-y-3">
+        <div 
+          className="mt-6 border rounded p-4 space-y-3"
+          data-testid="unrecognized-products-section"
+        >
           <h3 className="font-semibold">
             Unrecognized Products
           </h3>
@@ -331,6 +336,8 @@ export default function ReplenishInventoryPage() {
               <div
                 key={item.barcode}
                 className="grid grid-cols-[2fr_2fr_32px] gap-3 items-center"
+                data-testid={`unrecognized-product-${item.barcode}`}
+
               >
                 <AppInput
                   label=""

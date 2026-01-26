@@ -7,6 +7,7 @@ type CreateProductOptions = {
   stock?: string;
   cost?: string;
   unit?: 'Oz' | 'Pcs';
+  barcode?: string;
 };
 
 type EditProductOptions = {
@@ -23,12 +24,19 @@ export async function createProduct(
 ) {
   const productName =
     options.name ?? `PW Product ${Date.now()}`;
+    const barcode = options.barcode;
 
   await page.goto('/products/new');
 
   const nameInput = page.getByTestId('product-name');
   await nameInput.click();
   await nameInput.type(productName, { delay: 10 });
+
+  if (barcode) {
+    const barcodeInput = page.getByTestId('product-barcode');
+    await barcodeInput.click();
+    await barcodeInput.type(barcode, { delay: 10 });
+  }
 
   await page.getByTestId('product-unit').click();
   await page.getByRole('option', {
