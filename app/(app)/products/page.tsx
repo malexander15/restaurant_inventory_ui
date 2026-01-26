@@ -420,6 +420,7 @@ const filteredProducts = products
                   <span>•</span>
                 <div className="flex items-center gap-2">
                   <EditIcon
+                    data-testid={`edit-product-${product.name}`}
                     className="cursor-pointer text-blue-400 hover:text-blue-300"
                     sx={{ fontSize: '.9rem' }}
                     onClick={() => {
