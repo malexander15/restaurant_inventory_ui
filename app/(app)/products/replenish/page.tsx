@@ -249,7 +249,7 @@ export default function ReplenishInventoryPage() {
             label="Select Products"
             options={groupedProductOptions}
             value={selectedProductIds}
-            testId="replenish-product"
+            testId="replenish-product-select"
             onChange={(val) =>
               setSelectedProductIds(
                 Array.isArray(val) ? val : [val]
@@ -271,7 +271,7 @@ export default function ReplenishInventoryPage() {
                   placeholder={product.unit}
                   value={quantities[product.id] || ""}
                   size="small"
-                  testId="replenish-quantity"
+                  testId="replenish-quantity-input"
                   onChange={(val) =>
                     setQuantities({
                       ...quantities,

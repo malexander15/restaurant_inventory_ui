@@ -406,6 +406,7 @@ const filteredProducts = products
             <div
               key={product.id}
               className="border rounded p-4 flex items-center justify-between"
+              data-testid={`product-row-${product.name}`}
             >
               {/* LEFT: Name + stock */}
               <div>

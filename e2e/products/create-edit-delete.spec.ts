@@ -3,7 +3,7 @@ import {
   createProduct,
   editProduct,
   deleteProduct,
-} from './helpers/products';
+} from '../helpers/products';
 
 test('create, edit, and delete a product', async ({ page }) => {
   // Create
