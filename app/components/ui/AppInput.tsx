@@ -28,6 +28,9 @@ type AppInputProps = {
   max?: number;
   step?: number;
 
+  // ID for testing
+  testId?: string;
+
   fullWidth?: boolean;
 } & Omit<React.ComponentProps<typeof TextField>, "onChange" | "value">;
 
@@ -48,6 +51,7 @@ export default function AppInput({
   min,
   max,
   step,
+  testId,
   fullWidth = true,
   inputPadding,
   ...rest
@@ -76,6 +80,7 @@ export default function AppInput({
         min,
         max,
         step,
+          ...(testId && { 'data-testid': testId }),
       }}
       sx={{
         // Label colors

@@ -125,7 +125,7 @@ export default function ProductsPage() {
     }
 
     loadProducts();
-  }, []);
+  }, [searchParams]);
 
   if (loading) {
     return <ProductPageSkeleton />;
@@ -270,7 +270,10 @@ const filteredProducts = products
         {/* Top row: header + search + filters */}
         <div className="flex items-center justify-between gap-4">
           {/* Left: Title */}
-          <h1 className="text-3xl font-bold whitespace-nowrap">
+          <h1 
+            className="text-3xl font-bold whitespace-nowrap"
+            data-testid="products-page-title"
+          >
             Products
           </h1>
 
@@ -345,7 +348,7 @@ const filteredProducts = products
               <Divider sx={{ borderColor: "#333" }} />
 
               <AppButton
-                variant="secondary"
+                intent="secondary"
                 fullWidth
                 onClick={() => {
                   resetFilters();
@@ -375,7 +378,7 @@ const filteredProducts = products
 
             <AppButton
               ref={filterButtonRef}
-              variant="ghost"
+              intent="ghost"
               startIcon={<FilterListIcon />}
               onClick={() => setFiltersOpen(true)}
             >
@@ -385,20 +388,20 @@ const filteredProducts = products
         </div>
 
         {/* Second row: New Product button */}
-        <div>
-          <Link
-            href="/products/new"
-            className="inline-block text-sm px-4 py-2 border rounded hover:bg-gray-100/10"
-          >
-            + New Product
-          </Link>
-        </div>
+        <AppButton
+          component={Link}
+          href="/products/new"
+          intent="secondary"
+          data-testid="new-product"
+        >
+          + New Product
+        </AppButton>
       </div>
 
       {!loading && filteredProducts.length === 0 ? (
         <p className="text-gray-500">No products found.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4" data-testid="products-list">
           {filteredProducts.map((product) => (
             <div
               key={product.id}
@@ -431,6 +434,7 @@ const filteredProducts = products
                     }}
                   />
                   <HighlightOffIcon
+                    data-testid={`delete-product-${product.name}`}
                     className="cursor-pointer text-red-500 hover:text-red-400"
                     sx={{ fontSize: '.9rem' }}
                     onClick={() => setDeleteTarget(product)}
@@ -557,7 +561,7 @@ const filteredProducts = products
 
         <DialogActions>
           <AppButton
-            variant="secondary"
+            intent="secondary"
             onClick={() => setEditTarget(null)}
           >
             Cancel

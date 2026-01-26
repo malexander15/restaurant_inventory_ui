@@ -22,6 +22,7 @@ type AppSelectProps<T extends string | number = string> = {
   disabled?: boolean;
   fullWidth?: boolean;
   size?: "small" | "medium";
+  testId?: string;
 };
 
 export function AppSelect<T extends string | number = string>({
@@ -29,6 +30,7 @@ export function AppSelect<T extends string | number = string>({
   options,
   value,
   onChange,
+  testId,
   multiple = false,
   checkbox = false,
   disabled = false,
@@ -57,6 +59,7 @@ export function AppSelect<T extends string | number = string>({
         size={size}
         value={value}
         disabled={disabled}
+        data-testid={testId}
         onChange={(e) =>
           onChange(e.target.value as T | T[])
         }

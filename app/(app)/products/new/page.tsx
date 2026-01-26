@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppSelect } from '@/app/components/ui/AppSelect';
 import AppInput from '@/app/components/ui/AppInput';
 import AppAlert from '@/app/components/ui/AppAlert';
+import AppButton from '@/app/components/ui/AppButton';
 import { apiFetch } from '@/app/lib/api';
 import CancelIcon from "@mui/icons-material/Cancel"
 import {IconButton, Tooltip} from "@mui/material"
@@ -151,9 +152,8 @@ export default function NewProductPage() {
         message: "Products created successfully",
       });
 
-      setTimeout(() => {
-        router.push("/products?created=1");
-      }, 500);
+      router.push("/products?created=1");
+
     } catch {
       setAlert({
         open: true,
@@ -175,12 +175,15 @@ export default function NewProductPage() {
           setAlert((prev) => ({ ...prev, open: false }))
         }
       />
-      <h1 className="text-2xl font-bold mb-6">New Product</h1>
+      <h1 
+        className="text-2xl font-bold mb-6"
+        data-testid="new-products-page-title"
+      >
+        New Product
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-3">
-
-
           {products.map((product, index) => (
             <div
               key={index}
@@ -189,6 +192,7 @@ export default function NewProductPage() {
               <AppInput
                 label="Name"
                 value={product.name}
+                testId="product-name"
                 onChange={(val) =>
                   updateProduct(index, { name: val })
                 }
@@ -197,6 +201,7 @@ export default function NewProductPage() {
               <AppInput
                 label="Category"
                 value={product.category}
+                testId="product-category"
                 onChange={(val) =>
                   updateProduct(index, { category: val })
                 }
@@ -206,6 +211,7 @@ export default function NewProductPage() {
               <AppInput
                 label="Barcode"
                 value={product.barcode}
+                testId="product-barcode"
                 onChange={(val) =>
                   updateProduct(index, { barcode: val })
                 }
@@ -216,6 +222,7 @@ export default function NewProductPage() {
                 label="Unit"
                 options={unitOptions}
                 value={product.unit}
+                testId="product-unit"
                 onChange={(val) =>
                   updateProduct(index, { unit: val as "oz" | "pcs" })
                 }
@@ -225,6 +232,7 @@ export default function NewProductPage() {
                 label="Quantity"
                 type="number"
                 value={product.stock_quantity}
+                testId="product-stock"
                 onChange={(val) =>
                   updateProduct(index, { stock_quantity: val })
                 }
@@ -236,6 +244,7 @@ export default function NewProductPage() {
                 type="number"
                 step={0.01}
                 value={product.unit_cost}
+                testId="product-cost"
                 onChange={(val) =>
                   updateProduct(index, { unit_cost: val })
                 }
@@ -262,21 +271,22 @@ export default function NewProductPage() {
             </div>
           ))}
         </div>
-        <button
+        <AppButton
           type="button"
           onClick={addProduct}
-          className="border rounded px-4 py-2 hover:bg-gray-100/10 mr-8"
+          intent="secondary"
+          data-testid="add-product-row"
         >
           + Add Product
-        </button>
-
-        <button
+        </AppButton>
+        <AppButton
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          intent="primary"
+          data-testid="submit-products"
         >
           {loading ? "Saving..." : "Create Products"}
-        </button>
+        </AppButton>
       </form>
     </div>
   )

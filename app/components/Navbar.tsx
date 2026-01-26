@@ -36,7 +36,10 @@ export default function Navbar() {
 
           {/* Products */}
           <div className="relative group">
-            <span className="font-semibold cursor-pointer">
+            <span 
+              className="font-semibold cursor-pointer"
+              data-testid="nav-products"
+            >
               Products
             </span>
 
@@ -49,7 +52,11 @@ export default function Navbar() {
               <Link href="/products/new" className="block px-4 py-2 hover:bg-gray-100/10">
                 New Product
               </Link>
-              <Link href="/products/replenish" className="block px-4 py-2 hover:bg-gray-100/10">
+              <Link 
+                href="/products/replenish" 
+                className="block px-4 py-2 hover:bg-gray-100/10"
+                data-testid="nav-replenish"
+              >
                 Replenish
               </Link>
             </div>

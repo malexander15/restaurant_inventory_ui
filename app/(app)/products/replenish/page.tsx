@@ -249,6 +249,7 @@ export default function ReplenishInventoryPage() {
             label="Select Products"
             options={groupedProductOptions}
             value={selectedProductIds}
+            testId="replenish-product"
             onChange={(val) =>
               setSelectedProductIds(
                 Array.isArray(val) ? val : [val]
@@ -270,6 +271,7 @@ export default function ReplenishInventoryPage() {
                   placeholder={product.unit}
                   value={quantities[product.id] || ""}
                   size="small"
+                  testId="replenish-quantity"
                   onChange={(val) =>
                     setQuantities({
                       ...quantities,
@@ -286,7 +288,8 @@ export default function ReplenishInventoryPage() {
             <AppButton
               type="submit"
               fullWidth
-              variant="primary"
+              intent="primary"
+              data-testid="replenish-submit"
             >
               Replenish Inventory
             </AppButton>
@@ -297,7 +300,7 @@ export default function ReplenishInventoryPage() {
             <AppButton
               type="button"
               fullWidth
-              variant="primary"
+              intent="primary"
               onClick={shipUnknownsToCreate}
             >
               Create Products ({unknownProducts.length})
@@ -309,7 +312,7 @@ export default function ReplenishInventoryPage() {
             <AppButton
               type="button"
               fullWidth
-              variant="primary"
+              intent="primary"
               onClick={handleReplenishAndCreate}
             >
               Replenish & Create Products

@@ -51,10 +51,10 @@ export default function ConfirmDialog({
       )}
 
       <DialogActions sx={{ p: 2 }}>
-        <AppButton variant="ghost" onClick={onCancel}>
+        <AppButton intent="ghost" onClick={onCancel}>
           {cancelText}
         </AppButton>
-        <AppButton variant="primary" onClick={onConfirm}>
+        <AppButton intent="primary" onClick={onConfirm}>
           {confirmText}
         </AppButton>
       </DialogActions>
