@@ -36,7 +36,7 @@ export async function replenishManually(
   ).toBeVisible({ timeout: 10000 });
 }
 
-export async function replenishByBarcode(
+export async function scanRecognizedBarcode(
   page: Page,
   barcode: string,
   quantity: string
@@ -47,19 +47,16 @@ export async function replenishByBarcode(
   await barcodeInput.click();
   await barcodeInput.fill('');
   await barcodeInput.type(barcode, { delay: 20 });
+
+  // Trigger scan
   await page.keyboard.press('Enter');
+
+  // Quantity input appears
   const qtyInput = page.getByTestId('replenish-quantity-input');
   await expect(qtyInput).toBeVisible();
   await qtyInput.fill(quantity);
-
-  // Submit
-  await page.getByTestId('replenish-submit').click();
-
-  // Assert success feedback
-  await expect(
-    page.getByText(/replenished successfully/i)
-  ).toBeVisible({ timeout: 10000 });
 }
+
 
 export async function scanUnrecognizedBarcode(
   page: Page,
@@ -87,8 +84,26 @@ export async function scanUnrecognizedBarcode(
     page.getByTestId(`unrecognized-product-${barcode}`)
   ).toBeVisible();
 
-  // Assert Create Products button is available
   await expect(
     page.getByTestId('create-products-from-barcode')
   ).toBeVisible();
 }
+
+export async function submitReplenish(page: Page) {
+  await page.getByTestId('replenish-submit').click();
+
+  await expect(
+    page.getByText(/replenished successfully/i)
+  ).toBeVisible({ timeout: 10000 });
+}
+
+export async function submitReplenishAndCreate(page: Page) {
+  await page.getByTestId('replenish-and-create').click();
+
+  await expect(
+    page.getByTestId('new-products-page-title')
+  ).toBeVisible({ timeout: 10000 });
+}
+
+
+

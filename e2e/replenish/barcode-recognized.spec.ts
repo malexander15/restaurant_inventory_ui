@@ -5,7 +5,8 @@ import {
 } from '../helpers/products';
 import {
   navigateToReplenish,
-  replenishByBarcode,
+  scanRecognizedBarcode,
+  submitReplenish,
 } from '../helpers/replenish';
 
 test('replenish product by recognized barcode', async ({ page }) => {
@@ -21,7 +22,8 @@ test('replenish product by recognized barcode', async ({ page }) => {
   await navigateToReplenish(page);
 
   // Replenish +5 via barcode
-  await replenishByBarcode(page, barcode, '5');
+  await scanRecognizedBarcode(page, barcode, '5');
+  await submitReplenish(page)
 
   // Assert stock updated
   const productRow = page.getByTestId(`product-row-${name}`);

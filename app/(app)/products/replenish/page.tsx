@@ -315,6 +315,7 @@ export default function ReplenishInventoryPage() {
               type="button"
               fullWidth
               intent="primary"
+              data-testid="replenish-and-create"
               onClick={handleReplenishAndCreate}
             >
               Replenish & Create Products
