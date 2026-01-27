@@ -23,11 +23,9 @@ export default function AppAlert({
     <Snackbar
       open={open}
       autoHideDuration={autoHideDuration}
+      disableWindowBlurListener
       onClose={onClose}
       anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      sx={{
-        mt: 8,
-      }}
     >
       <Alert
         onClose={onClose}

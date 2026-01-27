@@ -262,7 +262,7 @@ export default function RecipesPage() {
         message={alert.message}
         onClose={() => {
           setAlert({ ...alert, open: false });
-          router.replace("/recipes");
+          router.replace("/recipes", { scroll: false });
         }}
       />
           

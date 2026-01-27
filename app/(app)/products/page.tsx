@@ -261,9 +261,7 @@ const filteredProducts = products
         message={alert.message}
         onClose={() => {
           setAlert({ ...alert, open: false });
-
-          // Optional but recommended: clear URL params
-          router.replace("/products");
+          router.replace("/products", {scroll: false });
         }}
       />
       <div className="flex flex-col gap-4 mb-6">
