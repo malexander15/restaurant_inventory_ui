@@ -297,12 +297,10 @@ export default function RecipesPage() {
             },
           }}
         >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="text-sm font-semibold text-white">
               Filters
             </div>
-
-            <Divider sx={{ borderColor: "#333" }} />
 
             <AppSelect
               label="Recipe Type"
@@ -317,13 +315,14 @@ export default function RecipesPage() {
               ]}
             />
 
-            <Divider sx={{ borderColor: "#333" }} />
+            <Divider sx={{ borderColor: "#dfd8d8", margin: 1 }} />
 
             <AppButton
-              intent="secondary"
+              intent="ghost"
               fullWidth
               onClick={() => {
                 setTypeFilter("");
+                setSearch("")
                 setFilterAnchor(null);
               }}
             >
@@ -346,7 +345,7 @@ export default function RecipesPage() {
           </div>
 
           <AppButton
-            intent="ghost"
+            intent="primary"
             startIcon={<FilterListIcon />}
             onClick={(e) => setFilterAnchor(e.currentTarget)}
           >
