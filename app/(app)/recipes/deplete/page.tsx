@@ -267,7 +267,10 @@ export default function DepleteInventoryPage() {
           setAlert((prev) => ({ ...prev, open: false }))
         }
       />
-      <h1 className="text-3xl font-bold mb-6">
+      <h1 
+        className="text-3xl font-bold mb-6"
+        data-testid="deplete-page-title"
+      >
         Manual Inventory Depletion
       </h1>
       <form onSubmit={handleSubmit} className="space-y-4 border rounded p-4">
@@ -275,6 +278,7 @@ export default function DepleteInventoryPage() {
           <FormControl fullWidth>
             <AppSelect<number>
               label="Menu Items"
+              testId="deplete-recipe-select"
               multiple
               checkbox
               value={selectedRecipeIds}
@@ -291,7 +295,11 @@ export default function DepleteInventoryPage() {
             />
 
             {selectedRecipes.map((recipe) => (
-              <div key={recipe.id} className="flex items-center gap-3 mt-2">
+              <div 
+                key={recipe.id} 
+                className="flex items-center gap-3 mt-2"
+                data-testid={`deplete-row-${recipe.id}`}
+              >
                 <span className="w-40 text-sm">{recipe.name}</span>
 
                 <AppInput
@@ -301,6 +309,7 @@ export default function DepleteInventoryPage() {
                   size="small"
                   min={1}
                   placeholder="Qty"
+                  testId={`deplete-qty-${recipe.id}`}
                   value={quantities[recipe.id] || ""}
                   onChange={(val) =>
                     setQuantities({
@@ -315,7 +324,8 @@ export default function DepleteInventoryPage() {
         </div>
         <AppButton 
           type="submit" 
-          variant="danger"
+          intent="danger"
+          data-testid="deplete-submit"
           fullWidth={true}
           disabled={submitting}
         >
@@ -331,12 +341,14 @@ export default function DepleteInventoryPage() {
           type="file"
           accept=".csv"
           ref={fileInputRef}
+          data-testid="deplete-csv-input"
           hidden
           onChange={handleCsvUpload}
         />
 
         <AppButton
-          variant="secondary"
+          intent="secondary"
+          data-testid="deplete-upload-csv"
           onClick={() => fileInputRef.current?.click()}
         >
           Upload CSV
@@ -366,7 +378,10 @@ export default function DepleteInventoryPage() {
       )}
 
       {matchedRecipes.length > 0 && (
-        <div className="border border-green-600 bg-green-50/10 p-3 rounded text-sm space-y-2">
+        <div 
+          className="border border-green-600 bg-green-50/10 p-3 rounded text-sm space-y-2"
+          data-testid="csv-matched-list"
+        >
           <strong className="text-green-400">
             Matched menu items (ready to deplete):
           </strong>
@@ -390,7 +405,7 @@ export default function DepleteInventoryPage() {
 
           {hasMoreMatched && (
             <AppButton
-              variant="ghost"
+              intent="ghost"
               onClick={() => setShowAllMatched((prev) => !prev)}
             >
               {showAllMatched ? "See less" : "See more"}
@@ -418,7 +433,7 @@ export default function DepleteInventoryPage() {
 
           {hasMoreUnmatched && (
             <AppButton
-              variant="ghost"
+              intent="ghost"
               onClick={() => setShowAllUnmatched((prev) => !prev)}
             >
               {showAllUnmatched ? "See less" : "See more"}

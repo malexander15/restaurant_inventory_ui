@@ -1,6 +1,7 @@
 import { expect, Page } from '@playwright/test';
 
 type CreateRecipeOptions = {
+  recipe_type?: 'menu_item' | 'prepped_item';
   name?: string;
   ingredientName?: RegExp;
   quantity?: string;
@@ -16,7 +17,8 @@ export async function createRecipe(
     options.ingredientName ?? /cheese/i;
   const quantity =
     options.quantity ?? '1';
-
+  const recipeType =
+    options.recipe_type ?? 'menu_item';
   await page.goto('/recipes/new');
 
   await expect(
