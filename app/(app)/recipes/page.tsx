@@ -269,7 +269,10 @@ export default function RecipesPage() {
       {/* Header + search + filters */}
       <div className="flex items-center justify-between mb-2 gap-4">
         {/* Left: Title */}
-        <h1 className="text-3xl font-bold whitespace-nowrap">
+        <h1 
+        className="text-3xl font-bold whitespace-nowrap"
+        data-testid="recipes-page-title"
+        >
           Recipes
         </h1>
         <Popover
@@ -317,7 +320,7 @@ export default function RecipesPage() {
             <Divider sx={{ borderColor: "#333" }} />
 
             <AppButton
-              variant="secondary"
+              intent="secondary"
               fullWidth
               onClick={() => {
                 setTypeFilter("");
@@ -343,7 +346,7 @@ export default function RecipesPage() {
           </div>
 
           <AppButton
-            variant="ghost"
+            intent="ghost"
             startIcon={<FilterListIcon />}
             onClick={(e) => setFilterAnchor(e.currentTarget)}
           >
@@ -357,13 +360,16 @@ export default function RecipesPage() {
         <Link
           href="/recipes/new"
           className="inline-block text-sm px-4 py-2 border rounded hover:bg-gray-100/10"
+
         >
           + New Recipe
         </Link>
       </div>
 
       {/* Recipe list */}
-      <div className="space-y-4">
+      <div 
+        className="space-y-4"
+      >
         {filteredRecipes.map((recipe) => {
           const isExpanded = expandedRecipeId === recipe.id;
 
@@ -371,12 +377,15 @@ export default function RecipesPage() {
             <div
               key={recipe.id}
               className="border rounded p-4 hover:border-gray-400 transition"
+              data-testid={`recipe-row-${recipe.name}`}
+              data-recipe-id={recipe.id}
             >
               {/* Header row */}
               <div className="group flex items-start justify-between">
                 {/* Clickable area */}
                 <div
                   className="flex-1 cursor-pointer"
+                  data-testid={`recipe-toggle-${recipe.id}`}
                   onClick={() =>
                     setExpandedRecipeId(
                       isExpanded ? null : recipe.id
@@ -403,6 +412,7 @@ export default function RecipesPage() {
                     <EditIcon
                       className="cursor-pointer text-blue-400 hover:text-blue-300"
                       sx={{ fontSize: '.9rem' }}
+                      data-testid={`edit-recipe-${recipe.id}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditTarget(recipe);
@@ -416,6 +426,7 @@ export default function RecipesPage() {
                     <HighlightOffIcon
                       className="cursor-pointer text-red-400 hover:text-red-300"
                       sx={{ fontSize: '.9rem' }}
+                      data-testid="delete-recipe"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleteTarget(recipe);
@@ -432,6 +443,7 @@ export default function RecipesPage() {
                   <div className="flex justify-end">
                     {!isEditingIngredients ? (
                       <AppButton
+                        data-testid={`recipe-ingredients-edit-${recipe.id}`}
                         onClick={() => {
                           setIngredientDrafts(
                             recipe.recipe_ingredients.reduce(
@@ -444,24 +456,25 @@ export default function RecipesPage() {
                           );
                           setIsEditingIngredients(true);
                         }}
-                        variant="secondary"
+                        intent="secondary"
                       >
                         Edit Ingredients
                       </AppButton>
                     ) : (
                       <div className="flex gap-2">
                         <AppButton
+                          data-testid={`recipe-ingredients-save-${recipe.id}`}
                           onClick={() => handleIngredientsSave(recipe)}
-                          variant="primary"
+                          intent="primary"
                         >
                           Save
                         </AppButton>
                         <AppButton
+                          data-testid={`recipe-ingredients-cancel-${recipe.id}`}
                           onClick={() => {
-                            // No need to reset drafts here since we're deleting
                             setIsEditingIngredients(false);
                           }}
-                          variant="ghost"
+                          intent="ghost"
                         >
                           Cancel
                         </AppButton>
@@ -475,10 +488,14 @@ export default function RecipesPage() {
                       No ingredients yet
                     </div>
                   ) : (
-                    <ul className="space-y-2">
+                    <ul 
+                      className="space-y-2"
+                      data-testid={`recipe-ingredients-list-${recipe.id}`}
+                    >
                       {recipe.recipe_ingredients.map((ri: any) => (
                         <li
                           key={ri.id}
+                          data-testid={`recipe-ingredient-row-${ri.id}`}
                           className="flex items-center justify-between text-sm gap-4"
                         >
                           {/* Ingredient name */}
@@ -492,6 +509,7 @@ export default function RecipesPage() {
                               <AppInput
                                 type="text"
                                 label=""
+                                testId={`recipe-ingredient-qty-${ri.id}`}
                                 min={0.01}
                                 step={0.01}
                                 width={60}
@@ -540,6 +558,7 @@ export default function RecipesPage() {
         onClose={() => setEditTarget(null)}
         maxWidth="sm"
         fullWidth
+        data-testid="edit-recipe-dialog"
         slotProps={{
           paper: {
             sx: {
@@ -575,6 +594,7 @@ export default function RecipesPage() {
             <AppInput
               value={editForm.name}
               label="Recipe Name"
+              testId="edit-recipe-name"
               onChange={(val) =>
                 setEditForm({ ...editForm, name: val })
               }
@@ -587,6 +607,7 @@ export default function RecipesPage() {
             <AppSelect
               value={editForm.recipe_type}
               label="Menu Item"
+              testId="edit-recipe-type"
               onChange={(val) =>
                 setEditForm({
                   ...editForm,
@@ -602,14 +623,20 @@ export default function RecipesPage() {
         </DialogContent>
 
         <DialogActions
-          sx={{ p: 2, borderTop: "1px solid #333" }}>
+          sx={{ p: 2, borderTop: "1px solid #333" }}
+        >
           <AppButton
-            variant="ghost"
+            data-testid="edit-recipe-cancel"
+            intent="ghost"
             onClick={() => setEditTarget(null)}
           >
             Cancel
           </AppButton>
-          <AppButton variant="primary" onClick={handleEditSave}>
+          <AppButton 
+            intent="primary" 
+            onClick={handleEditSave}
+            data-testid="edit-recipe-save"
+          >
             Save
           </AppButton>
         </DialogActions>

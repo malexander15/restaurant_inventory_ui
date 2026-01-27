@@ -237,7 +237,12 @@ export default function NewRecipePage() {
         />
       )}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">New Recipe</h1>
+        <h1 
+          className="text-3xl font-bold mb-1"
+          data-testid="new-recipe-page-title"
+        >
+          New Recipe
+        </h1>
         <p className="text-sm text-gray-500">
           Create a menu item or prepped item
         </p>
@@ -267,6 +272,7 @@ export default function NewRecipePage() {
             type="text"
             name="name"
             label=""
+            testId="recipe-name"
             value={form.name}
             onChange={(val: string) => setForm({ ...form, name: val })}
             placeholder="e.g. Quesadilla"
@@ -305,6 +311,7 @@ export default function NewRecipePage() {
               multiple
               checkbox
               value={selectedIngredients}
+              testId="recipe-ingredient-select"
               onChange={(vals) =>
                 setSelectedIngredients(Array.isArray(vals) ? vals : [vals])
               }
@@ -327,7 +334,7 @@ export default function NewRecipePage() {
                     size="small"
                     min={0}
                     step={0.01}
-                    placeholder={ingredient.unit ? ingredient.unit : "qty"}
+                    placeholder={ingredient.unit ? ingredient.unit : "qty"}testId="recipe-ingredient-quantity"
                     value={quantities[key] || ""}
                     onChange={(val: string) =>
                       setQuantities({
@@ -345,12 +352,17 @@ export default function NewRecipePage() {
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-4">
-          <AppButton variant="ghost">
+          <AppButton intent="ghost">
             <Link href="/recipes">
             Cancel
             </Link>
           </AppButton>
-          <AppButton type="submit">Create Recipe</AppButton>
+          <AppButton 
+            type="submit"
+            data-testid="submit-recipe"
+          >
+            Create Recipe
+          </AppButton>
         </div>
       </form>
       <ConfirmDialog

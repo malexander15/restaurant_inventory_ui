@@ -32,6 +32,7 @@ export default function ConfirmDialog({
     <Dialog
       open={open}
       onClose={onCancel}
+      data-testid="confirm-dialog"
       PaperProps={{
         sx: {
           backgroundColor: "#262626",
@@ -51,10 +52,18 @@ export default function ConfirmDialog({
       )}
 
       <DialogActions sx={{ p: 2 }}>
-        <AppButton intent="ghost" onClick={onCancel}>
+        <AppButton 
+        intent="ghost" 
+        onClick={onCancel}
+        data-testid="confirm-cancel"
+      >
           {cancelText}
         </AppButton>
-        <AppButton intent="primary" onClick={onConfirm}>
+        <AppButton 
+          intent="primary" 
+          onClick={onConfirm}
+          data-testid="confirm-submit"
+        >
           {confirmText}
         </AppButton>
       </DialogActions>
