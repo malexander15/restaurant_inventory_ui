@@ -94,7 +94,7 @@ export default function SettingsPage() {
           {/* Upload button */}
           <AppButton
             type="button"
-            variant="ghost"
+            intent="ghost"
             onClick={() => fileInputRef.current?.click()}
           >
             Upload Logo
