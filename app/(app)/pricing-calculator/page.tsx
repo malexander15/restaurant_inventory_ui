@@ -197,7 +197,7 @@ export default function PricingCalculatorPage() {
 
       {/* Actions */}
       <div className="flex justify-end">
-        <AppButton variant="ghost" onClick={() => {
+        <AppButton intent="ghost" onClick={() => {
           setSelectedProductIds([]);
           setQuantities({});
           setMarginLow(3);
