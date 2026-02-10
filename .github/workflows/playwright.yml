@@ -85,7 +85,7 @@ jobs:
         run: |
           bin/rails s -p 3001 -b 0.0.0.0 > /tmp/api.log 2>&1 &
           echo $! > /tmp/api.pid
-          
+
       # --- Start Next.js (prod server) ---
       - name: Build UI
         run: npm run build
@@ -96,7 +96,7 @@ jobs:
           echo $! > /tmp/ui.pid
 
       - name: Wait for servers
-        run:  npx --yes wait-on -v -t 60000 http://localhost:3000 http://localhost:3001
+        run: npx --yes wait-on -v -t 60000 http://localhost:3000 http-get://localhost:3001
 
       - name: Print server logs on failure
         if: failure()
