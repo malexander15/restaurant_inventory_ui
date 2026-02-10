@@ -68,7 +68,7 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: restaurant_inventory_api/.ruby-version
+          ruby-version: 3.2.4
           bundler-cache: true
           working-directory: restaurant_inventory_api
 
