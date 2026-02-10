@@ -83,18 +83,28 @@ jobs:
       - name: Start API
         working-directory: restaurant_inventory_api
         run: |
-          bin/rails s -p 3001 -b 0.0.0.0 &
-
+          bin/rails s -p 3001 -b 0.0.0.0 > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+          
       # --- Start Next.js (prod server) ---
       - name: Build UI
         run: npm run build
 
       - name: Start UI
         run: |
-          npm run start -- -p 3000 &
+          npm run start -- -p 3000 > /tmp/ui.log 2>&1 &
+          echo $! > /tmp/ui.pid
 
       - name: Wait for servers
-        run: npx wait-on http://localhost:3000/login http://localhost:3001
+        run:  npx --yes wait-on -v -t 60000 http://localhost:3000 http://localhost:3001
+
+      - name: Print server logs on failure
+        if: failure()
+        run: |
+          echo "===== API LOG ====="
+          sed -n '1,200p' /tmp/api.log || true
+          echo "===== UI LOG ====="
+          sed -n '1,200p' /tmp/ui.log || true
 
       # --- Playwright ---
       - name: Install Playwright Browsers
