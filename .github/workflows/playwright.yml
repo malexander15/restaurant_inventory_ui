@@ -7,9 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  e2e:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     services:
       postgres:
@@ -27,8 +27,8 @@ jobs:
           --health-retries=5
 
     env:
-      # Next -> Rails
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+      # UI -> API (matches your api.ts + .env.local key)
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
 
       # Rails
       RAILS_ENV: test
@@ -36,7 +36,7 @@ jobs:
       JWT_SECRET: test-secret
       FRONTEND_URL: http://localhost:3000
 
-      # CI seed data (Restaurant auth account)
+      # Seeded restaurant credentials (used by Playwright auth.setup.ts)
       CI_RESTAURANT_EMAIL: admin@thebreakroom.com
       CI_RESTAURANT_PASSWORD: breakroom2025
       CI_RESTAURANT_NAME: CI Restaurant
@@ -55,7 +55,10 @@ jobs:
       - name: Install UI dependencies
         run: npm ci
 
-      # --- API (public repo) ---
+      - name: Lint UI
+        run: npm run lint
+
+      # --- API ---
       - name: Checkout API
         uses: actions/checkout@v4
         with:
@@ -68,7 +71,7 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.2.4
+          ruby-version: "3.2.4"
           bundler-cache: true
           working-directory: restaurant_inventory_api
 
@@ -86,7 +89,7 @@ jobs:
           bin/rails s -p 3001 -b 0.0.0.0 > /tmp/api.log 2>&1 &
           echo $! > /tmp/api.pid
 
-      # --- Start Next.js (prod server) ---
+      # --- Start Next.js ---
       - name: Build UI
         run: npm run build
 
@@ -96,26 +99,26 @@ jobs:
           echo $! > /tmp/ui.pid
 
       - name: Wait for servers
-        run: npx --yes wait-on -v -t 60000 http://localhost:3000 http-get://localhost:3001
+        run: npx --yes wait-on -v -t 60000 http://localhost:3000 tcp:3001
 
-      - name: Print server logs on failure
-        if: failure()
-        run: |
-          echo "===== API LOG ====="
-          sed -n '1,200p' /tmp/api.log || true
-          echo "===== UI LOG ====="
-          sed -n '1,200p' /tmp/ui.log || true
-
-      # --- Playwright ---
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
       - name: Run Playwright tests
         run: npx playwright test
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
+
+      - name: Print server logs on failure
+        if: failure()
+        run: |
+          echo "===== API LOG (first 200 lines) ====="
+          sed -n '1,200p' /tmp/api.log || true
+          echo "===== UI LOG (first 200 lines) ====="
+          sed -n '1,200p' /tmp/ui.log || true
