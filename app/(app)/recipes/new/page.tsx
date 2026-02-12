@@ -49,7 +49,6 @@ export default function NewRecipePage() {
   useState<string[]>([]);
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [errors, setErrors] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [errorAlert, setErrorAlert] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,18 +81,6 @@ export default function NewRecipePage() {
         })),
     },
   ].filter((g) => g.options.length > 0);
-
-
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-    ) {
-    const { name, type, checked, value } = e.target;
-
-    setForm({
-        ...form,
-        [name]: type === "checkbox" ? checked : value,
-    });
-    }
 
   // Confirm and save new recipe
   async function handleConfirmSave() {
@@ -247,17 +234,6 @@ export default function NewRecipePage() {
           Create a menu item or prepped item
         </p>
       </div>
-
-      {/* Errors */}
-      {errors.length > 0 && (
-        <div className="mb-4 border border-red-200 bg-red-50/50 rounded p-3">
-          <ul className="text-sm text-red-700 space-y-1">
-            {errors.map((err) => (
-              <li key={err}>{err}</li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* Form */}
       <form

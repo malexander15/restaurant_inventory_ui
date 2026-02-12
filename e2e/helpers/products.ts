@@ -1,6 +1,5 @@
 // e2e/helpers/products.ts
 import { expect, Page } from '@playwright/test';
-import crypto from 'crypto'
 
 type CreateProductOptions = {
   name?: string;
