@@ -12,6 +12,7 @@ import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import AppAlert from "@/app/components/ui/AppAlert";
 import NewRecipePageSkeleton from "@/app/(app)/recipes/new/NewRecipePageSkeleton";
 import { apiFetch } from "@/app/lib/api";
+import { getErrorMessage } from "@/app/lib/errors";
 
 type Product = {
   id: number;
@@ -49,7 +50,6 @@ export default function NewRecipePage() {
   useState<string[]>([]);
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [errors, setErrors] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [errorAlert, setErrorAlert] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,18 +82,6 @@ export default function NewRecipePage() {
         })),
     },
   ].filter((g) => g.options.length > 0);
-
-
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-    ) {
-    const { name, type, checked, value } = e.target;
-
-    setForm({
-        ...form,
-        [name]: type === "checkbox" ? checked : value,
-    });
-    }
 
   // Confirm and save new recipe
   async function handleConfirmSave() {
@@ -134,8 +122,8 @@ export default function NewRecipePage() {
       }
 
       router.push("/recipes?created=1");
-    } catch (err: any) {
-      setErrorAlert(err.message || "Failed to create recipe");
+    } catch (err: unknown) {
+      setErrorAlert(getErrorMessage(err, "Failed to create recipe"));
       setConfirmOpen(false);
     } finally {
       setSubmitting(false);
@@ -248,17 +236,6 @@ export default function NewRecipePage() {
         </p>
       </div>
 
-      {/* Errors */}
-      {errors.length > 0 && (
-        <div className="mb-4 border border-red-200 bg-red-50/50 rounded p-3">
-          <ul className="text-sm text-red-700 space-y-1">
-            {errors.map((err) => (
-              <li key={err}>{err}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* Form */}
       <form
         onSubmit={handleSubmit}
@@ -357,11 +334,12 @@ export default function NewRecipePage() {
             Cancel
             </Link>
           </AppButton>
-          <AppButton 
+          <AppButton
+            disabled={submitting}
             type="submit"
             data-testid="submit-recipe"
           >
-            Create Recipe
+            Save Recipe
           </AppButton>
         </div>
       </form>

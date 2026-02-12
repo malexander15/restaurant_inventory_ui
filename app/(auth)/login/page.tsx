@@ -6,6 +6,7 @@ import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
 import { apiFetch } from '@/app/lib/api'
+import { getErrorMessage } from "@/app/lib/errors";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,13 +16,17 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  type LoginResponse = {
+    token: string;
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const data = await apiFetch("/login", {
+      const data = await apiFetch<LoginResponse>("/login", {
         method: "POST",
         skipAuth: true,
         body: JSON.stringify({ email, password }),
@@ -32,8 +37,8 @@ export default function LoginPage() {
 
       // 🚀 Redirect
       router.push("/products");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "An error occurred during login. Please try again."));
     } finally {
       setLoading(false);
     }

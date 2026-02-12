@@ -6,6 +6,7 @@ import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
 import { apiFetch } from "@/app/lib/api";
+import { getErrorMessage } from "@/app/lib/errors";
 
 export default function ResetPasswordClient() {
   const searchParams = useSearchParams();
@@ -46,8 +47,8 @@ export default function ResetPasswordClient() {
       setTimeout(() => {
         router.push("/login");
       }, 1500);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "An error occurred during password reset. Please try again."));
     } finally {
       setLoading(false);
     }

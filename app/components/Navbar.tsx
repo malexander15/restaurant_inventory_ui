@@ -87,11 +87,11 @@ export default function Navbar() {
         {/* ================= CENTER ================= */}
         <div className="flex-1 flex justify-center items-center">
           {restaurant?.logo_url ? (
-            <img
+            <Image
+              width={260}
+              height={64}
               src={restaurant.logo_url}
               alt={restaurant.name}
-              className="max-h-16 max-w-[260px] object-contain"
-
             />
           ) : (
             <span className="text-sm text-gray-400">

@@ -11,6 +11,9 @@ import DepleteInventoryPageSkeleton from "@/app/(app)/recipes/deplete/DepleteInv
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import { apiFetch } from "@/app/lib/api"
 import Papa from "papaparse";
+import { getErrorMessage } from "@/app/lib/errors";
+
+type CsvRow = Record<string, string>;
 
 type Recipe = {
   id: number;
@@ -39,7 +42,7 @@ export default function DepleteInventoryPage() {
   const selectedRecipes = recipes.filter((r) =>
     selectedRecipeIds.includes(r.id)
   );
-  const [csvRows, setCsvRows] = useState<any[]>([]);
+  const [csvRows, setCsvRows] = useState<CsvRow[]>([]);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvParsed, setCsvParsed] = useState(false);
   const [csvApplied, setCsvApplied] = useState(false);
@@ -115,7 +118,7 @@ export default function DepleteInventoryPage() {
     ? unmatchedCsvItems
     : unmatchedCsvItems.slice(0, MAX_UNMATCHED_PREVIEW);
 
-    const MAX_MATCHED_PREVIEW = 10;
+  const MAX_MATCHED_PREVIEW = 10;
 
   const [showAllMatched, setShowAllMatched] = useState(false);
 
@@ -165,11 +168,11 @@ export default function DepleteInventoryPage() {
       }
 
       router.push("/products/?depleted=1");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAlert({
         open: true,
         severity: "error",
-        message: err.message || "Failed to deplete inventory",
+        message: getErrorMessage(err, "Failed to deplete inventory"),
       });
       setConfirmOpen(false);
     } finally {
@@ -204,7 +207,7 @@ export default function DepleteInventoryPage() {
     return true;
   }
 
-  function normalizeSales(rows: any[]) {
+  function normalizeSales(rows: CsvRow[]) {
     const map: Record<string, number> = {};
 
     for (const row of rows) {
@@ -235,14 +238,14 @@ export default function DepleteInventoryPage() {
 
     setCsvFile(file);
 
-    Papa.parse(file, {
+    Papa.parse<CsvRow>(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        setCsvRows(results.data as any[]);
+        setCsvRows(results.data);
         setCsvParsed(true);
       },
-      error: (error) => {
+      error: (error: Error) => {
         setAlert({
           open: true,
           severity: "error",
