@@ -27,7 +27,19 @@ type Recipe = {
   id: number;
   name: string;
   recipe_type: "menu_item" | "prepped_item";
-  recipe_ingredients: any[];
+  recipe_ingredients: RecipeIngredient[];
+};
+
+type RecipeIngredient = {
+  id: number;
+  recipe_id: number;
+  ingredient_id: number;
+  quantity: number;
+  ingredient: {
+    id: number;
+    name: string;
+    unit: string;
+  } | null;
 };
 
 export default function RecipesPage() {
@@ -446,7 +458,7 @@ export default function RecipesPage() {
                         onClick={() => {
                           setIngredientDrafts(
                             recipe.recipe_ingredients.reduce(
-                              (acc: Record<number, string>, ri: any) => {
+                              (acc: Record<number, string>, ri: RecipeIngredient) => {
                                 acc[ri.id] = String(ri.quantity);
                                 return acc;
                               },
@@ -491,7 +503,7 @@ export default function RecipesPage() {
                       className="space-y-2"
                       data-testid={`recipe-ingredients-list-${recipe.id}`}
                     >
-                      {recipe.recipe_ingredients.map((ri: any) => (
+                      {recipe.recipe_ingredients.map((ri: RecipeIngredient) => (
                         <li
                           key={ri.id}
                           data-testid={`recipe-ingredient-row-${ri.id}`}
