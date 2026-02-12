@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRef } from "react";
+import Image from "next/image";
 import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
@@ -73,7 +74,9 @@ export default function SettingsPage() {
           <label className="text-sm font-medium">Logo</label>
 
           {(logoUrl || restaurant.logo_url) && (
-            <img
+            <Image
+              width={280}
+              height={96}
               src={logoUrl || restaurant.logo_url}
               alt="Restaurant logo preview"
               className="h-20 object-contain border rounded"
