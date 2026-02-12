@@ -333,11 +333,12 @@ export default function NewRecipePage() {
             Cancel
             </Link>
           </AppButton>
-          <AppButton 
+          <AppButton
+            disabled={submitting}
             type="submit"
             data-testid="submit-recipe"
           >
-            Create Recipe
+            Save Recipe
           </AppButton>
         </div>
       </form>
