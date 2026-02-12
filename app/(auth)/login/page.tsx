@@ -16,13 +16,17 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  type LoginResponse = {
+    token: string;
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const data = await apiFetch("/login", {
+      const data = await apiFetch<LoginResponse>("/login", {
         method: "POST",
         skipAuth: true,
         body: JSON.stringify({ email, password }),

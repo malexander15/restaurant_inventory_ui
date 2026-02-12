@@ -21,6 +21,10 @@ export default function SignupPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
+  type SignupResponse = {
+    token: string;
+  };
+
   function handleLogoUpload(file: File) {
     const reader = new FileReader();
 
@@ -39,7 +43,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const data = await apiFetch("/signup", {
+      const data = await apiFetch<SignupResponse>("/signup", {
         method: "POST",
         skipAuth: true,
         body: JSON.stringify({

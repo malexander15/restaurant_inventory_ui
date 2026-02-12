@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
         method: "POST",
         skipAuth: true,
         body: JSON.stringify({ email }),
-      });
+      }) as { reset_url?: string };
 
       setSuccess(true);
 
