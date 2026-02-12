@@ -6,6 +6,7 @@ import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
 import { apiFetch } from '@/app/lib/api';
+import Image from "next/image";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -120,9 +121,11 @@ export default function SignupPage() {
 
             {logoPreview && (
               <div className="flex justify-center">
-                <img
+                <Image
                   src={logoPreview}
                   alt="Logo preview"
+                  width={96}
+                  height={96}
                   className="h-24 w-24 object-contain border rounded"
                 />
               </div>
