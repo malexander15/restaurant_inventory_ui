@@ -42,26 +42,29 @@ export default function ReplenishInventoryPage() {
     useState<UnknownProductDraft[]>([]);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-      async function loadProducts() {
-        try {
-          const data = await apiFetch<Product[]>(
-            "/products",
-            { cache: "no-store" }
-          );
+  useEffect(() => {
+    async function loadProducts() {
+      setLoading(true);
+      try {
+        const data = await apiFetch<Product[]>(
+          "/products",
+          { cache: "no-store" }
+        );
 
-          setProducts(data);
-        } catch (err) {
-          setAlert({
-            type: "error",
-            message: "Failed to load products",
-            variant: "filled"
-          });
-        }
+        setProducts(data);
+      } catch {
+        setAlert({
+          type: "error",
+          message: "Failed to load products",
+          variant: "filled"
+        });
+      } finally {
+        setLoading(false);
       }
+    }
 
-      loadProducts();
-    }, []);
+    loadProducts();
+  }, []);
 
   const groupedProductOptions = Object.entries(
     products.reduce<Record<string, SelectOption<number>[]>>(
@@ -127,10 +130,10 @@ export default function ReplenishInventoryPage() {
     try {
       await replenishKnownProducts();
       router.push("/products?replenished=1");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAlert({
         type: "error",
-        message: err.message || "Failed to replenish inventory",
+        message: getErrorMessage(err, "Failed to replenish inventory"),
         variant: "filled"
       });
     }
@@ -148,10 +151,10 @@ export default function ReplenishInventoryPage() {
       );
 
       router.push("/products/new");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAlert({
         type: "error",
-        message: err.message || "Failed to process inventory",
+        message: getErrorMessage(err, "Failed to process inventory"),
         variant: "standard"
       });
     }
@@ -197,6 +200,9 @@ export default function ReplenishInventoryPage() {
     router.push("/products/new");
   }
 
+  function getErrorMessage(err: unknown, fallback: string) {
+    return err instanceof Error ? err.message : fallback;
+  }
 
   useEffect(() => {
     barcodeInputRef.current?.focus();
