@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
       if (data?.reset_url) {
         setResetUrl(data.reset_url);
       }
-    } catch (err: any) {
+    } catch (err) {
       // We still show success messaging to avoid email enumeration
       console.error(err);
       setSuccess(true);

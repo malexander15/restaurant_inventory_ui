@@ -6,6 +6,7 @@ import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
 import { apiFetch } from '@/app/lib/api'
+import { getErrorMessage } from "@/app/lib/errors";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,8 +33,8 @@ export default function LoginPage() {
 
       // 🚀 Redirect
       router.push("/products");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "An error occurred during login. Please try again."));
     } finally {
       setLoading(false);
     }

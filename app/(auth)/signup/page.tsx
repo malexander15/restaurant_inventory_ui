@@ -7,6 +7,7 @@ import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
 import { apiFetch } from '@/app/lib/api';
 import Image from "next/image";
+import { getErrorMessage } from "@/app/lib/errors";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -55,8 +56,8 @@ export default function SignupPage() {
 
       // 🚀 Redirect to app
       router.push("/products");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "An error occurred during signup. Please try again."));
     } finally {
       setLoading(false);
     }
