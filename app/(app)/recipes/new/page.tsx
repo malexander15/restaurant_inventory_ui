@@ -12,6 +12,7 @@ import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import AppAlert from "@/app/components/ui/AppAlert";
 import NewRecipePageSkeleton from "@/app/(app)/recipes/new/NewRecipePageSkeleton";
 import { apiFetch } from "@/app/lib/api";
+import { getErrorMessage } from "@/app/lib/errors";
 
 type Product = {
   id: number;
@@ -121,8 +122,8 @@ export default function NewRecipePage() {
       }
 
       router.push("/recipes?created=1");
-    } catch (err: any) {
-      setErrorAlert(err.message || "Failed to create recipe");
+    } catch (err: unknown) {
+      setErrorAlert(getErrorMessage(err, "Failed to create recipe"));
       setConfirmOpen(false);
     } finally {
       setSubmitting(false);
