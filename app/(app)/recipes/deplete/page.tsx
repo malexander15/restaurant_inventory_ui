@@ -11,6 +11,7 @@ import DepleteInventoryPageSkeleton from "@/app/(app)/recipes/deplete/DepleteInv
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import { apiFetch } from "@/app/lib/api"
 import Papa from "papaparse";
+import { getErrorMessage } from "@/app/lib/errors";
 
 type CsvRow = Record<string, string>;
 
@@ -68,10 +69,6 @@ export default function DepleteInventoryPage() {
 
     loadMenuItems();
   }, []);
-
-  function getErrorMessage(err: unknown, fallback: string) {
-    return err instanceof Error ? err.message : fallback;
-  }
 
   //Validate submission data and open dialog box to confirm submission
   function handleSubmit(e: React.FormEvent) {

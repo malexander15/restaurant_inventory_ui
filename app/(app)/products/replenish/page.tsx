@@ -11,6 +11,7 @@ import { IconButton, Tooltip } from "@mui/material";
 import { SelectOption } from "@/app/components/ui/types";
 import { apiFetch } from "@/app/lib/api";
 import CancelIcon from "@mui/icons-material/Cancel"
+import { getErrorMessage } from "@/app/lib/errors";
 
 type Product = {
   id: number;
@@ -198,10 +199,6 @@ export default function ReplenishInventoryPage() {
     );
 
     router.push("/products/new");
-  }
-
-  function getErrorMessage(err: unknown, fallback: string) {
-    return err instanceof Error ? err.message : fallback;
   }
 
   useEffect(() => {
