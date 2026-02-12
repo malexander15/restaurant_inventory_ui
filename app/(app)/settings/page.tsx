@@ -21,6 +21,8 @@ export default function SettingsPage() {
   if (!restaurant) return null;
 
   async function handleSave() {
+    if (!restaurant) return;
+
     const updated = await apiFetch("/me", {
       method: "PATCH",
       body: JSON.stringify({
@@ -30,7 +32,7 @@ export default function SettingsPage() {
       }),
     });
 
-    setRestaurant(updated);
+    setRestaurant(updated as typeof restaurant);
     setSuccess(true);
   }
 
