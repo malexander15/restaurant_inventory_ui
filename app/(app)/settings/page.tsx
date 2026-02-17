@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRef } from "react";
+import Image from "next/image";
 import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
@@ -20,6 +21,8 @@ export default function SettingsPage() {
   if (!restaurant) return null;
 
   async function handleSave() {
+    if (!restaurant) return;
+
     const updated = await apiFetch("/me", {
       method: "PATCH",
       body: JSON.stringify({
@@ -29,7 +32,7 @@ export default function SettingsPage() {
       }),
     });
 
-    setRestaurant(updated);
+    setRestaurant(updated as typeof restaurant);
     setSuccess(true);
   }
 
@@ -73,7 +76,9 @@ export default function SettingsPage() {
           <label className="text-sm font-medium">Logo</label>
 
           {(logoUrl || restaurant.logo_url) && (
-            <img
+            <Image
+              width={280}
+              height={96}
               src={logoUrl || restaurant.logo_url}
               alt="Restaurant logo preview"
               className="h-20 object-contain border rounded"

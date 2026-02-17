@@ -6,6 +6,8 @@ import AppInput from "@/app/components/ui/AppInput";
 import AppButton from "@/app/components/ui/AppButton";
 import AppAlert from "@/app/components/ui/AppAlert";
 import { apiFetch } from '@/app/lib/api';
+import Image from "next/image";
+import { getErrorMessage } from "@/app/lib/errors";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -18,6 +20,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  type SignupResponse = {
+    token: string;
+  };
 
   function handleLogoUpload(file: File) {
     const reader = new FileReader();
@@ -37,7 +43,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const data = await apiFetch("/signup", {
+      const data = await apiFetch<SignupResponse>("/signup", {
         method: "POST",
         skipAuth: true,
         body: JSON.stringify({
@@ -54,8 +60,8 @@ export default function SignupPage() {
 
       // 🚀 Redirect to app
       router.push("/products");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "An error occurred during signup. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -120,9 +126,11 @@ export default function SignupPage() {
 
             {logoPreview && (
               <div className="flex justify-center">
-                <img
+                <Image
                   src={logoPreview}
                   alt="Logo preview"
+                  width={96}
+                  height={96}
                   className="h-24 w-24 object-contain border rounded"
                 />
               </div>
