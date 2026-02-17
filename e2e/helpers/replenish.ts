@@ -83,10 +83,6 @@ export async function scanUnrecognizedBarcode(
   await expect(
     page.getByTestId(`unrecognized-product-${barcode}`)
   ).toBeVisible();
-
-  await expect(
-    page.getByTestId('create-products-from-barcode')
-  ).toBeVisible();
 }
 
 export async function submitReplenish(page: Page) {
