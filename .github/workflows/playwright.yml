@@ -53,7 +53,11 @@ jobs:
           cache: npm
 
       - name: Install UI dependencies
-        run: npm ci
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+        
+      - run: pnpm install --frozen-lockfile
 
       - name: Lint UI
         run: npm run lint
@@ -91,7 +95,7 @@ jobs:
 
       # --- Start Next.js ---
       - name: Build UI
-        run: npm run build
+        run: pnpm build
 
       - name: Start UI
         run: |
