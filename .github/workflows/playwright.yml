@@ -50,7 +50,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: npm
+          cache: pnpm
 
       - name: Install UI dependencies
         uses: pnpm/action-setup@v3
@@ -60,7 +60,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Lint UI
-        run: npm run lint
+        run: pnpm lint
 
       # --- API ---
       - name: Checkout API
@@ -99,7 +99,7 @@ jobs:
 
       - name: Start UI
         run: |
-          npm run start -- -p 3000 > /tmp/ui.log 2>&1 &
+          pnpm start -- -p 3000 > /tmp/ui.log 2>&1 &
           echo $! > /tmp/ui.pid
 
       - name: Wait for servers
