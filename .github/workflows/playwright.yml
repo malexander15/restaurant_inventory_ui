@@ -99,7 +99,7 @@ jobs:
 
       - name: Start UI
         run: |
-          pnpm start -- -p 3000 > /tmp/ui.log 2>&1 &
+          pnpm exec next start -p 3000 -H 0.0.0.0 > /tmp/ui.log 2>&1 &
           echo $! > /tmp/ui.pid
 
       - name: Wait for servers
