@@ -18,7 +18,7 @@ export default async function AppLayout({
   return (
     <>
       <Navbar />
-      <main className="pt-16">{children}</main>
+      <main>{children}</main>
     </>
   );
 }
