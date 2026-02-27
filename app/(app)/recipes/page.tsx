@@ -279,7 +279,7 @@ export default function RecipesPage() {
       />
           
       {/* Header + search + filters */}
-      <div className="flex items-center justify-between mb-2 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-3 md:gap-4">
         {/* Left: Title */}
         <h1 
         className="text-3xl font-bold whitespace-nowrap"
@@ -345,8 +345,8 @@ export default function RecipesPage() {
 
 
         {/* Right: Search + Filter */}
-        <div className="flex items-center gap-3">
-          <div className="w-64">
+        <div className="md:w-auto flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+          <div className="md:w-64">
             <AppInput
               label=""
               placeholder="Search recipes…"
@@ -357,8 +357,10 @@ export default function RecipesPage() {
           </div>
 
           <AppButton
-            intent="primary"
+            intent="ghost"
             startIcon={<FilterListIcon />}
+            size="small"
+            
             onClick={(e) => setFilterAnchor(e.currentTarget)}
           >
             Filters
