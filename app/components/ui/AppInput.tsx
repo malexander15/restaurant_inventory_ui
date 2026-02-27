@@ -89,6 +89,7 @@ export default function AppInput({
         "& .MuiInputLabel-root.Mui-disabled": { color: "#9ca3af" }, // gray-400
         width: fullWidth ? undefined : width,
         height: height,
+        margin: 0,
 
         // Input background + text
         "& .MuiOutlinedInput-root": {
