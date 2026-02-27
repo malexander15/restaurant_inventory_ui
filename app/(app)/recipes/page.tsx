@@ -421,7 +421,7 @@ export default function RecipesPage() {
                     {isExpanded ? "▾" : "▸"}
                   </div>
 
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition">
                     <EditIcon
                       className="cursor-pointer text-blue-400 hover:text-blue-300"
                       sx={{ fontSize: '.9rem' }}
