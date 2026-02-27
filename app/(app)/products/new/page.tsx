@@ -38,7 +38,7 @@ export default function NewProductPage() {
   });
   const [loading, setLoading] = useState(false);
   const GRID_COLS =
-  "grid-cols-[2fr_2fr_2fr_1fr_1.5fr_1.5fr_32px]";
+  "grid-cols-3 md:grid-cols-[2fr_2fr_2fr_1fr_1.5fr_1.5fr_32px]";
 
 
     function emptyProduct(): ProductForm {
@@ -187,71 +187,83 @@ export default function NewProductPage() {
           {products.map((product, index) => (
             <div
               key={index}
-              className={`grid ${GRID_COLS} gap-3 items-center`}
+              className={`grid ${GRID_COLS} gap-2 md:gap-3 items-start md:items-center`}
             >
-              <AppInput
-                label="Name"
-                value={product.name}
-                testId="product-name"
-                onChange={(val) =>
-                  updateProduct(index, { name: val })
-                }
-              />
+              <div>
+                <AppInput
+                  label="Name"
+                  value={product.name}
+                  testId="product-name"
+                  onChange={(val) =>
+                    updateProduct(index, { name: val })
+                  }
+                />
+              </div>
 
-              <AppInput
-                label="Category"
-                value={product.category}
-                testId="product-category"
-                onChange={(val) =>
-                  updateProduct(index, { category: val })
-                }
-                placeholder="Category"
-              />
+              <div>
+                <AppInput
+                  label="Category"
+                  value={product.category}
+                  testId="product-category"
+                  onChange={(val) =>
+                    updateProduct(index, { category: val })
+                  }
+                  placeholder="Category"
+                />
+              </div>
 
-              <AppInput
-                label="Barcode"
-                value={product.barcode}
-                testId="product-barcode"
-                onChange={(val) =>
-                  updateProduct(index, { barcode: val })
-                }
-                placeholder="Barcode"
-              />
+              <div>
+                <AppInput
+                  label="Barcode"
+                  value={product.barcode}
+                  testId="product-barcode"
+                  onChange={(val) =>
+                    updateProduct(index, { barcode: val })
+                  }
+                  placeholder="Barcode"
+                />
+              </div>
 
-              <AppSelect
-                label="Unit"
-                options={unitOptions}
-                value={product.unit}
-                testId="product-unit"
-                onChange={(val) =>
-                  updateProduct(index, { unit: val as "oz" | "pcs" })
-                }
-              />
+              <div>
+                <AppInput
+                  label="Quantity"
+                  type="number"
+                  value={product.stock_quantity}
+                  testId="product-stock"
+                  onChange={(val) =>
+                    updateProduct(index, { stock_quantity: val })
+                  }
+                  placeholder="Qty"
+                />
+              </div>
 
-              <AppInput
-                label="Quantity"
-                type="number"
-                value={product.stock_quantity}
-                testId="product-stock"
-                onChange={(val) =>
-                  updateProduct(index, { stock_quantity: val })
-                }
-                placeholder="Qty"
-              />
+              <div>
+                <AppSelect
+                  label="Unit"
+                  options={unitOptions}
+                  value={product.unit}
+                  testId="product-unit"
+                  onChange={(val) =>
+                    updateProduct(index, { unit: val as "oz" | "pcs" })
+                  }
+                />
+              </div>
 
-              <AppInput
-                label="Cost"
-                type="number"
-                step={0.01}
-                value={product.unit_cost}
-                testId="product-cost"
-                onChange={(val) =>
-                  updateProduct(index, { unit_cost: val })
-                }
-                placeholder="Cost"
-              />
+              <div>
+                <AppInput
+                  label="Cost"
+                  type="number"
+                  step={0.01}
+                  value={product.unit_cost}
+                  testId="product-cost"
+                  onChange={(val) =>
+                    updateProduct(index, { unit_cost: val })
+                  }
+                  placeholder="Cost"
+                />
+              </div>
 
-              <div className="flex justify-center">
+              <div className="order-7 md:order-none col-span-3 md:col-span-1 flex justify-end md:justify-center">
                 {products.length > 1 && (
                   <Tooltip title="Remove product" arrow>
                     <IconButton
