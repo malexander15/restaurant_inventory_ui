@@ -266,7 +266,7 @@ const filteredProducts = products
       />
       <div className="flex flex-col gap-4 mb-6">
         {/* Top row: header + search + filters */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
           {/* Left: Title */}
           <h1 
             className="text-3xl font-bold whitespace-nowrap"
@@ -359,8 +359,8 @@ const filteredProducts = products
           </Popover>
 
           {/* Right: Search + Filters */}
-          <div className="flex items-center gap-3 flex-1 justify-end">
-            <div className="max-w-xs w-full">
+          <div className="w-full md:w-auto flex flex-col md:flex-row md:items-center gap-2 md:gap-3 md:flex-1 md:justify-end">
+            <div className="w-full md:max-w-xs">
               {loading ? (
                 <InputSkeleton />
               ) : (
@@ -379,6 +379,7 @@ const filteredProducts = products
               intent="ghost"
               startIcon={<FilterListIcon />}
               onClick={() => setFiltersOpen(true)}
+              className="w-full md:w-auto"
             >
               Filters
             </AppButton>

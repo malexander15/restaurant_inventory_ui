@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import SettingsIcon from "@mui/icons-material/Settings";
+import LogoutIcon from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 import { Tooltip } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useRestaurant } from "@/app/lib/useRestaurant"
@@ -11,128 +15,115 @@ import { useRestaurant } from "@/app/lib/useRestaurant"
 export default function Navbar() {
   const router = useRouter();
   const { restaurant } = useRestaurant();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   function handleLogout() {
     document.cookie = "token=; Max-Age=0; path=/";
     router.push("/login");
   }
 
+  function closeMobileMenu() {
+    setMobileMenuOpen(false);
+  }
+
   return (
     <nav className="border-b bg-black">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center">
-        {/* ================= LEFT ================= */}
-        <div className="flex items-center gap-8">
-          {/* Home */}
-          <Link href="/" className="hover:opacity-80 transition">
-            <Image
-              src="/iStockLogo.png"
-              alt="iStock"
-              width={80}
-              height={80}
-              className="h-6 w-auto"
-              priority
-            />
-          </Link>
-
-          {/* Products */}
-          <div className="relative group">
-            <span 
-              className="font-semibold cursor-pointer"
-              data-testid="nav-products"
+      <div className="mx-auto px-4 md:px-6 min-h-20 py-3">
+        <div className="flex items-center gap-4">
+          {/* ================= LEFT ================= */}
+          <div className="flex items-center">
+            <button
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="text-gray-300 hover:text-white transition"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
-              Products
-            </span>
-
-            <div className="absolute left-0 top-full h-2 w-full" />
-
-            <div className="absolute left-0 mt-2 w-44 border rounded bg-black shadow-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
-              <Link href="/products" className="block px-4 py-2 hover:bg-gray-100/10">
-                View Products
-              </Link>
-              <Link href="/products/new" className="block px-4 py-2 hover:bg-gray-100/10">
-                New Product
-              </Link>
-              <Link 
-                href="/products/replenish" 
-                className="block px-4 py-2 hover:bg-gray-100/10"
-                data-testid="nav-replenish"
-              >
-                Replenish
-              </Link>
-            </div>
+              {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
           </div>
-
-          {/* Recipes */}
-          <div className="relative group">
-            <span className="font-semibold cursor-pointer">
-              Recipes
-            </span>
-
-            <div className="absolute left-0 top-full h-2 w-full" />
-
-            <div className="absolute left-0 mt-2 w-44 border rounded bg-black shadow-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
-              <Link href="/recipes" className="block px-4 py-2 hover:bg-gray-100/10">
-                View Recipes
-              </Link>
-              <Link href="/recipes/new" className="block px-4 py-2 hover:bg-gray-100/10">
-                New Recipe
-              </Link>
-              <Link href="/recipes/deplete" className="block px-4 py-2 hover:bg-gray-100/10">
-                Deplete Recipes
-              </Link>
-            </div>
-          </div>
-        </div>
 
         {/* ================= CENTER ================= */}
-        <div className="flex-1 flex justify-center items-center">
+        <div className="flex-1 flex justify-center items-center min-w-0">
           {restaurant?.logo_url ? (
             <Image
               width={260}
               height={64}
               src={restaurant.logo_url}
               alt={restaurant.name}
+              className="max-h-10 w-auto"
             />
           ) : (
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-gray-400 truncate max-w-[140px] md:max-w-none">
               {restaurant?.name}
             </span>
           )}
         </div>
 
         {/* ================= RIGHT ================= */}
-        <div className="flex items-center gap-6">
-          {/* Calculator */}
-          <Tooltip title="Pricing Calculator" arrow>
+        <div className="flex items-center">
+          {/* Logout */}
+          <Tooltip title="Logout" arrow>
+            <button
+              onClick={handleLogout}
+              className="text-gray-300 hover:text-red-300 transition"
+              aria-label="Logout"
+            >
+              <LogoutIcon />
+            </button>
+          </Tooltip>
+        </div>
+        </div>
+
+        {mobileMenuOpen && (
+          <div className="mt-3 border rounded border-gray-800 bg-black/95">
+            <details className="border-b border-gray-800">
+              <summary className="px-4 py-3 cursor-pointer font-semibold">Products</summary>
+              <div className="pb-2">
+                <Link href="/products" onClick={closeMobileMenu} className="block px-6 py-2 hover:bg-gray-100/10">
+                  View Products
+                </Link>
+                <Link href="/products/new" onClick={closeMobileMenu} className="block px-6 py-2 hover:bg-gray-100/10">
+                  New Product
+                </Link>
+                <Link href="/products/replenish" onClick={closeMobileMenu} className="block px-6 py-2 hover:bg-gray-100/10" data-testid="nav-replenish">
+                  Replenish
+                </Link>
+              </div>
+            </details>
+
+            <details className="border-b border-gray-800">
+              <summary className="px-4 py-3 cursor-pointer font-semibold">Recipes</summary>
+              <div className="pb-2">
+                <Link href="/recipes" onClick={closeMobileMenu} className="block px-6 py-2 hover:bg-gray-100/10">
+                  View Recipes
+                </Link>
+                <Link href="/recipes/new" onClick={closeMobileMenu} className="block px-6 py-2 hover:bg-gray-100/10">
+                  New Recipe
+                </Link>
+                <Link href="/recipes/deplete" onClick={closeMobileMenu} className="block px-6 py-2 hover:bg-gray-100/10">
+                  Deplete Recipes
+                </Link>
+              </div>
+            </details>
+
             <Link
               href="/pricing-calculator"
-              className="text-gray-300 hover:text-white transition"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-2 px-4 py-3 border-b border-gray-800 hover:bg-gray-100/10"
             >
-              <CalculateIcon />
+              <CalculateIcon fontSize="small" />
+              Pricing Calculator
             </Link>
-          </Tooltip>
 
-          {/* Settings */}
-          <Tooltip title="Account Settings" arrow>
             <Link
               href="/settings"
-              className="text-gray-300 hover:text-white transition"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100/10"
             >
-              <SettingsIcon />
+              <SettingsIcon fontSize="small" />
+              Account Settings
             </Link>
-          </Tooltip>
-
-          {/* Divider */}
-          <div className="h-5 w-px bg-gray-700" />
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="text-sm hover:text-red-300 transition"
-          >
-            Logout
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </nav>
   );
