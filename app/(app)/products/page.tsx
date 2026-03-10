@@ -33,7 +33,16 @@ type Product = {
   stock_quantity: string
   unit_cost: string
   barcode?: string | null
-  category: string | null
+  product_category_id?: number | null
+  product_category?: {
+    id: number
+    name: string
+  } | null
+}
+
+type Category = {
+  id: number
+  name: string
 }
 
 type EditProductForm = {
@@ -41,12 +50,13 @@ type EditProductForm = {
   barcode: string;
   unit: "oz" | "pcs";
   unit_cost: string;
-  category: string | null;
+  product_category_id?: number
 };
 
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{
@@ -60,7 +70,7 @@ export default function ProductsPage() {
   });
   // 🔍 Filters
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
   const [unitFilter, setUnitFilter] = useState<"oz" | "pcs" | "">("");
   const [costSort, setCostSort] = useState<"asc" | "desc" | "">("");
   const filterButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -72,7 +82,7 @@ export default function ProductsPage() {
     barcode: "",
     unit: "oz",
     unit_cost: "",
-    category: "",
+    product_category_id: 0,
   });
   // 📜 URL params
   const router = useRouter();
@@ -111,6 +121,20 @@ export default function ProductsPage() {
   }
   }, [searchParams]);
 
+  // ✅ fetch categories in an effect
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const data = await apiFetch<Category[]>("/product_categories");
+        setCategories(data)
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadCategories();
+  }, []);
+
   // ✅ fetch products in an effect
   useEffect(() => {
     async function loadProducts() {
@@ -131,10 +155,13 @@ export default function ProductsPage() {
     return <ProductPageSkeleton />;
   }
 
-  // 📂 Unique categories (alphabetized)
-  const categories = Array.from(
-    new Set(products.map((p) => p.category || "No Category"))
-  ).sort();
+  const categoryOptions = [
+  { label: "No Category", value: 0 },
+  ...categories.map((c) => ({
+    label: c.name,
+    value: (c.id),
+  })),
+]
 
 // 🧠 Filtered + sorted products
 const filteredProducts = products
@@ -149,8 +176,8 @@ const filteredProducts = products
 
     // Category
     if (categoryFilter) {
-      const cat = product.category || "No Category";
-      if (cat !== categoryFilter) return false;
+      const cat = Number(product.product_category_id || "");
+      if (cat !== categoryFilter.id) return false;
     }
 
     // Unit
@@ -220,7 +247,9 @@ const filteredProducts = products
             barcode: editForm.barcode,
             unit: editForm.unit,
             unit_cost: Number(editForm.unit_cost),
-            category: editForm.category,
+            product_category_id: editForm.product_category_id === 0
+              ? null
+              : editForm.product_category_id
           },
         }),
       }
@@ -247,7 +276,7 @@ const filteredProducts = products
   }
 
   function resetFilters() {
-    setCategoryFilter("");
+    setCategoryFilter(null);
     setUnitFilter("");
     setCostSort("");
     setSearch("");
@@ -306,15 +335,12 @@ const filteredProducts = products
 
               <AppSelect
                 label="Category"
-                value={categoryFilter}
-                onChange={(val) => setCategoryFilter(val as string)}
-                options={[
-                  { label: "All", value: "" },
-                  ...categories.map((c) => ({
-                    label: c,
-                    value: c,
-                  })),
-                ]}
+                value={categoryFilter?.id || ""}
+                onChange={(val) => {
+                  const category = categories.find(c => c.id === val);
+                  setCategoryFilter((category as Category) || null);
+                }}
+                options={categoryOptions}
               />
 
               <AppSelect
@@ -428,9 +454,9 @@ const filteredProducts = products
                       setEditForm({
                         name: product.name,
                         barcode: product.barcode || "",
-                        unit: product.unit,
+                        unit: product.unit ?? "oz",
                         unit_cost: product.unit_cost,
-                        category: product.category,
+                        product_category_id: product.product_category?.id
                       });
                     }}
                   />
@@ -443,13 +469,13 @@ const filteredProducts = products
                 </div>
               </div>
               <div className="text-sm text-white/70">
-              <span>Category: {product.category || "N/A"}</span>
+              <span>Category: {product.product_category?.name || "N/A"}</span>
               </div>
             </div>
 
               {/* RIGHT: price */}
               <div className="text-sm text-white/70">
-                ${product.unit_cost}/oz
+                {`$${product.unit_cost}/${product.unit}`}
               </div>
             </div>
           ))}
@@ -494,12 +520,23 @@ const filteredProducts = products
 
           {/* Category */}
           <div>
-            <AppInput
+            <AppSelect<number>
               label="Category"
-              value={editForm.category || ""}
+              testId="edit-product-category"
+              value={editForm.product_category_id || 0}
               onChange={(val) =>
-                setEditForm({ ...editForm, category: val })
+                setEditForm({
+                  ...editForm,
+                  product_category_id:Number(val)
+                })
               }
+              options={[
+                { label: "No Category", value: 0 },
+                ...categories.map(c => ({
+                  label: c.name,
+                  value: c.id
+                }))
+              ]}
             />
           </div>
 
@@ -518,6 +555,7 @@ const filteredProducts = products
           <div>
             <AppSelect<"oz" | "pcs">
               label="Unit"
+              testId="edit-product-unit"
               value={editForm.unit}
               onChange={(val) =>
                 setEditForm({ ...editForm, unit: val as "oz" | "pcs" })
@@ -527,7 +565,6 @@ const filteredProducts = products
                 { label: "Pieces (pcs)", value: "pcs" },
               ]}
             />
-
           </div>
 
           {/* Unit Cost */}
@@ -546,9 +583,6 @@ const filteredProducts = products
           {/* Stock Quantity (disabled) */}
           <Tooltip title="To change quantity, use the Replenish Inventory page">
             <div>
-              {/* <label className="block text-sm font-medium">
-                Stock Quantity
-              </label> */}
               <AppInput
                 type="number"
                 label="Stock Quantity"

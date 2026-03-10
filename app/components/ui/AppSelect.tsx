@@ -57,7 +57,7 @@ export function AppSelect<T extends string | number = string>({
       <Select
         multiple={multiple}
         size={size}
-        value={value}
+        value={value ?? (multiple ? [] : "")}
         disabled={disabled}
         data-testid={testId}
         onChange={(e) =>

@@ -17,7 +17,10 @@ type Product = {
   id: number;
   name: string;
   unit: "oz" | "pcs";
-  category: string;
+  product_category?: {
+    id: number;
+    name: string;
+  } | null;
 };
 
 type AlertState = {
@@ -71,7 +74,7 @@ export default function ReplenishInventoryPage() {
     products.reduce<Record<string, SelectOption<number>[]>>(
       (acc, product) => {
         const category =
-          product.category?.trim() || "No Category";
+          product.product_category?.name?.trim() || "No Category";
 
         acc[category] ??= [];
         acc[category].push({

@@ -13,7 +13,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
 
   // CI: use cores but cap it
-  workers: process.env.CI ? Math.min(4, os.cpus().length) : 4,
+  workers: process.env.CI ? Math.min(2, os.cpus().length) : 2,
 
   reporter: process.env.CI ? [['html', { open: 'never' }]] : 'html',
 

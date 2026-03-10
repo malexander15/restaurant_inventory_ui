@@ -13,7 +13,11 @@ type Product = {
   name: string;
   unit: "oz" | "pcs";
   unit_cost: number;
-  category: string;
+  product_category_id: number | null;
+  product_category?: {
+    id: number;
+    name: string;
+  } | null;
 };
 
 export default function PricingCalculatorPage() {
@@ -50,12 +54,12 @@ export default function PricingCalculatorPage() {
     products.reduce<Record<string, SelectOption<number>[]>>(
       (acc, product) => {
         const category =
-          product.category?.trim() || "No Category";
+          product.product_category?.name?.trim() || "No Category";
 
         acc[category] ??= [];
         acc[category].push({
           value: product.id,
-          label: `${product.name} ($${product.unit_cost}/${product.unit})`,
+          label: `${product.name} ($${Number(product.unit_cost).toFixed(2)}/${product.unit})`,
         });
 
         return acc;
