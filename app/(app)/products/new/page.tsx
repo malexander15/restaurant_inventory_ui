@@ -344,7 +344,7 @@ export default function NewProductPage() {
               </div>
 
               <div>
-                <AppSelect<"oz" | "pcs">
+                <AppSelect
                   label="Unit"
                   options={unitOptions}
                   value={product.unit}
