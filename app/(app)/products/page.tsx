@@ -530,10 +530,13 @@ const filteredProducts = products
                   product_category_id:Number(val)
                 })
               }
-              options={categories.map(c => ({
-                label: c.name,
-                value: c.id
-              }))}
+              options={[
+                { label: "No Category", value: 0 },
+                ...categories.map(c => ({
+                  label: c.name,
+                  value: c.id
+                }))
+              ]}
             />
           </div>
 

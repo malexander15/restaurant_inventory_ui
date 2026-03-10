@@ -14,7 +14,7 @@ test("create, edit, and delete a product", async ({ page }) => {
 
   const { name: editedName } = await editProduct(page, originalName, {
     name: updatedName,
-    category: "Dairy",
+    category: "No Category",
     cost: "1.75",
   });
 
