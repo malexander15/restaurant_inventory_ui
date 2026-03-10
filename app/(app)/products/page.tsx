@@ -33,7 +33,16 @@ type Product = {
   stock_quantity: string
   unit_cost: string
   barcode?: string | null
-  category: string | null
+  product_category_id?: number | null
+  product_category?: {
+    id: number
+    name: string
+  } | null
+}
+
+type Category = {
+  id: number
+  name: string
 }
 
 type EditProductForm = {
@@ -41,12 +50,13 @@ type EditProductForm = {
   barcode: string;
   unit: "oz" | "pcs";
   unit_cost: string;
-  category: string | null;
+  product_category?: string | null;
 };
 
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{
@@ -72,7 +82,7 @@ export default function ProductsPage() {
     barcode: "",
     unit: "oz",
     unit_cost: "",
-    category: "",
+    product_category: "",
   });
   // 📜 URL params
   const router = useRouter();
@@ -111,6 +121,20 @@ export default function ProductsPage() {
   }
   }, [searchParams]);
 
+  // ✅ fetch categories in an effect
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const data = await apiFetch<Category[]>("/product_categories");
+        setCategories(data)
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadCategories();
+  }, []);
+
   // ✅ fetch products in an effect
   useEffect(() => {
     async function loadProducts() {
@@ -131,10 +155,6 @@ export default function ProductsPage() {
     return <ProductPageSkeleton />;
   }
 
-  // 📂 Unique categories (alphabetized)
-  const categories = Array.from(
-    new Set(products.map((p) => p.category || "No Category"))
-  ).sort();
 
 // 🧠 Filtered + sorted products
 const filteredProducts = products
@@ -220,7 +240,7 @@ const filteredProducts = products
             barcode: editForm.barcode,
             unit: editForm.unit,
             unit_cost: Number(editForm.unit_cost),
-            category: editForm.category,
+            product_category: editForm.product_category || null,
           },
         }),
       }
@@ -430,7 +450,7 @@ const filteredProducts = products
                         barcode: product.barcode || "",
                         unit: product.unit,
                         unit_cost: product.unit_cost,
-                        category: product.category,
+                        product_category: product.product_category?.name || "",
                       });
                     }}
                   />
@@ -443,13 +463,13 @@ const filteredProducts = products
                 </div>
               </div>
               <div className="text-sm text-white/70">
-              <span>Category: {product.category || "N/A"}</span>
+              <span>Category: {product.product_category?.name || "N/A"}</span>
               </div>
             </div>
 
               {/* RIGHT: price */}
               <div className="text-sm text-white/70">
-                ${product.unit_cost}/oz
+                ${product.unit_cost}/${product.unit}
               </div>
             </div>
           ))}
