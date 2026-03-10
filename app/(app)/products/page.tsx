@@ -522,6 +522,7 @@ const filteredProducts = products
           <div>
             <AppSelect<number>
               label="Category"
+              testId="edit-product-category"
               value={editForm.product_category_id || 0}
               onChange={(val) =>
                 setEditForm({
@@ -551,6 +552,7 @@ const filteredProducts = products
           <div>
             <AppSelect<"oz" | "pcs">
               label="Unit"
+              testId="edit-product-unit"
               value={editForm.unit}
               onChange={(val) =>
                 setEditForm({ ...editForm, unit: val as "oz" | "pcs" })
