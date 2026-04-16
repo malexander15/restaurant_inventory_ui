@@ -42,6 +42,7 @@ export default function AppDialog({
       onClose={onClose}
       maxWidth={maxWidth}
       fullWidth={fullWidth}
+      data-testid={testId}
       slotProps={{
         paper: {
           sx: {

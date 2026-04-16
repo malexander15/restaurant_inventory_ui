@@ -7,13 +7,10 @@ import EditIcon from "@mui/icons-material/Edit";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Popover,
   Divider,
 } from "@mui/material";
+import AppDialog from "../../components/ui/AppDialog";
 import AppInput from "../../components/ui/AppInput";
 import AppButton from "../../components/ui/AppButton";
 import AppAlert from "../../components/ui/AppAlert";
@@ -566,42 +563,41 @@ export default function RecipesPage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
       />
-      <Dialog
+      <AppDialog
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        maxWidth="sm"
-        fullWidth
-        data-testid="edit-recipe-dialog"
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundColor: "#262626",
-              color: "white",
-              border: "1px solid #333",
-            },
-          },
+        testId="edit-recipe-dialog"
+        title="Edit Recipe"
+        contentSx={{
+          pt: 3,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2.5,
         }}
+        paperSx={{
+          backgroundColor: "#262626",
+          color: "white",
+          border: "1px solid #333",
+        }}
+        actions={
+          <>
+            <AppButton
+              data-testid="edit-recipe-cancel"
+              intent="ghost"
+              onClick={() => setEditTarget(null)}
+            >
+              Cancel
+            </AppButton>
+            <AppButton
+              intent="primary"
+              onClick={handleEditSave}
+              data-testid="edit-recipe-save"
+            >
+              Save
+            </AppButton>
+          </>
+        }
       >
-        <DialogTitle
-          sx={{
-            fontWeight: 600,
-            fontSize: "1.25rem",
-            marginBottom: 2,
-            borderBottom: "1px solid #333",
-            pb: 1.5,
-          }}
-        >
-          Edit Recipe
-        </DialogTitle>
-
-        <DialogContent
-          sx={{
-            pt: 3,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2.5,
-          }}
-        >
           {/* Recipe Name */}
           <div>
             <AppInput
@@ -633,27 +629,7 @@ export default function RecipesPage() {
               ]}
             />
           </div>
-        </DialogContent>
-
-        <DialogActions
-          sx={{ p: 2, borderTop: "1px solid #333" }}
-        >
-          <AppButton
-            data-testid="edit-recipe-cancel"
-            intent="ghost"
-            onClick={() => setEditTarget(null)}
-          >
-            Cancel
-          </AppButton>
-          <AppButton 
-            intent="primary" 
-            onClick={handleEditSave}
-            data-testid="edit-recipe-save"
-          >
-            Save
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      </AppDialog>
     </div>
   );
 }
