@@ -4,10 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-   Dialog,
-   DialogTitle,
-   DialogContent,
-   DialogActions,
    Tooltip,
    Popover,
    Divider,
@@ -17,6 +13,7 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import FilterListIcon from "@mui/icons-material/FilterList";
 import EditIcon from "@mui/icons-material/Edit";
 import AppAlert from "@/app/components/ui/AppAlert";
+import AppDialog from "@/app/components/ui/AppDialog";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import AppButton from "../../components/ui/AppButton";
 import AppInput from "../../components/ui/AppInput";
@@ -548,124 +545,100 @@ const filteredProducts = products
         onConfirm={handleDelete}
       />
 
-      <Dialog
+      <AppDialog
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundColor: "#000",
-              color: "#fff",
-            },
-          },
+        title="Edit Product"
+        contentSx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
         }}
+        actions={
+          <>
+            <AppButton
+              intent="secondary"
+              onClick={() => setEditTarget(null)}
+            >
+              Cancel
+            </AppButton>
+
+            <AppButton onClick={handleEditSave}>
+              Save Changes
+            </AppButton>
+          </>
+        }
       >
-        <DialogTitle>Edit Product</DialogTitle>
+        <AppInput
+          label="Name"
+          value={editForm.name}
+          onChange={(val) =>
+            setEditForm({ ...editForm, name: val })
+          }
+        />
 
-        <DialogContent className="space-y-4 pt-2" sx={{ overflowY: "visible" }}>
-          {/* Name */}
-          <div>
-            <AppInput
-              label="Name"
-              value={editForm.name}
-              onChange={(val) =>
-                setEditForm({ ...editForm, name: val })
-              }
-            />
-          </div>
+        <AppSelect<number>
+          label="Category"
+          testId="edit-product-category"
+          value={editForm.product_category_id || 0}
+          onChange={(val) =>
+            setEditForm({
+              ...editForm,
+              product_category_id: Number(val),
+            })
+          }
+          options={[
+            { label: "No Category", value: 0 },
+            ...categories.map((c) => ({
+              label: c.name,
+              value: c.id,
+            })),
+          ]}
+        />
 
-          {/* Category */}
-          <div>
-            <AppSelect<number>
-              label="Category"
-              testId="edit-product-category"
-              value={editForm.product_category_id || 0}
-              onChange={(val) =>
-                setEditForm({
-                  ...editForm,
-                  product_category_id:Number(val)
-                })
-              }
-              options={[
-                { label: "No Category", value: 0 },
-                ...categories.map(c => ({
-                  label: c.name,
-                  value: c.id
-                }))
-              ]}
-            />
-          </div>
+        <AppInput
+          label="Barcode"
+          value={editForm.barcode}
+          onChange={(val) =>
+            setEditForm({ ...editForm, barcode: val })
+          }
+        />
 
-          {/* Barcode */}
-          <div>
-            <AppInput
-              label="Barcode"
-              value={editForm.barcode}
-              onChange={(val) =>
-                setEditForm({ ...editForm, barcode: val })
-              }
-            />
-          </div>
+        <AppSelect<"oz" | "pcs">
+          label="Unit"
+          testId="edit-product-unit"
+          value={editForm.unit}
+          onChange={(val) =>
+            setEditForm({ ...editForm, unit: val as "oz" | "pcs" })
+          }
+          options={[
+            { label: "Ounces (oz)", value: "oz" },
+            { label: "Pieces (pcs)", value: "pcs" },
+          ]}
+        />
 
-          {/* Unit */}
-          <div>
-            <AppSelect<"oz" | "pcs">
-              label="Unit"
-              testId="edit-product-unit"
-              value={editForm.unit}
-              onChange={(val) =>
-                setEditForm({ ...editForm, unit: val as "oz" | "pcs" })
-              }
-              options={[
-                { label: "Ounces (oz)", value: "oz" },
-                { label: "Pieces (pcs)", value: "pcs" },
-              ]}
-            />
-          </div>
+        <AppInput
+          type="number"
+          label="Unit Cost"
+          step={0.01}
+          value={editForm.unit_cost}
+          onChange={(val) =>
+            setEditForm({ ...editForm, unit_cost: val })
+          }
+        />
 
-          {/* Unit Cost */}
+        <Tooltip title="To change quantity, use the Replenish Inventory page">
           <div>
             <AppInput
               type="number"
-              label="Unit Cost"
-              step={0.01}
-              value={editForm.unit_cost}
-              onChange={(val) =>
-                setEditForm({ ...editForm, unit_cost: val })
-              }
+              label="Stock Quantity"
+              value={editTarget?.stock_quantity || ""}
+              onChange={() => {}}
+              disabled
             />
           </div>
-
-          {/* Stock Quantity (disabled) */}
-          <Tooltip title="To change quantity, use the Replenish Inventory page">
-            <div>
-              <AppInput
-                type="number"
-                label="Stock Quantity"
-                value={editTarget?.stock_quantity || ""}
-                onChange={() => {}}
-                disabled
-              />
-            </div>
-          </Tooltip>
-        </DialogContent>
-
-        <DialogActions>
-          <AppButton
-            intent="secondary"
-            onClick={() => setEditTarget(null)}
-          >
-            Cancel
-          </AppButton>
-
-          <AppButton onClick={handleEditSave}>
-            Save Changes
-          </AppButton>
-        </DialogActions>
-
-      </Dialog>
+        </Tooltip>
+      </AppDialog>
     </div>
   )
 }
