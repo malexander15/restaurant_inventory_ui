@@ -38,9 +38,18 @@ type Product = {
     id: number
     name: string
   } | null
+  ingredient?: {
+    id: number
+    name: string
+  } | null
 }
 
 type Category = {
+  id: number
+  name: string
+}
+
+type Ingredient = {
   id: number
   name: string
 }
@@ -71,6 +80,7 @@ export default function ProductsPage() {
   // 🔍 Filters
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
+  const [ingredientFilter, setIngredientFilter] = useState<Ingredient | null>(null);
   const [unitFilter, setUnitFilter] = useState<"oz" | "pcs" | "">("");
   const [costSort, setCostSort] = useState<"asc" | "desc" | "">("");
   const filterButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -163,6 +173,23 @@ export default function ProductsPage() {
   })),
 ]
 
+const ingredientOptions = [
+  { label: "Ingredients", value: 0 },
+  ...Array.from(
+    new Map(
+      products
+        .filter((product) => product.ingredient)
+        .map((product) => [
+          product.ingredient!.id,
+          {
+            label: product.ingredient!.name,
+            value: product.ingredient!.id,
+          },
+        ])
+    ).values()
+  ).sort((a, b) => a.label.localeCompare(b.label)),
+]
+
 // 🧠 Filtered + sorted products
 const filteredProducts = products
   .filter((product) => {
@@ -178,6 +205,12 @@ const filteredProducts = products
     if (categoryFilter) {
       const cat = Number(product.product_category_id || "");
       if (cat !== categoryFilter.id) return false;
+    }
+
+    // Ingredient
+    if (ingredientFilter) {
+      const ingredientId = Number(product.ingredient?.id || "");
+      if (ingredientId !== ingredientFilter.id) return false;
     }
 
     // Unit
@@ -277,6 +310,7 @@ const filteredProducts = products
 
   function resetFilters() {
     setCategoryFilter(null);
+    setIngredientFilter(null);
     setUnitFilter("");
     setCostSort("");
     setSearch("");
@@ -341,6 +375,27 @@ const filteredProducts = products
                   setCategoryFilter((category as Category) || null);
                 }}
                 options={categoryOptions}
+              />
+
+              <AppSelect
+                label="Ingredient"
+                value={ingredientFilter?.id || 0}
+                onChange={(val) => {
+                  const ingredient = ingredientOptions.find(
+                    (option) => option.value === Number(val)
+                  );
+
+                  if (!ingredient || ingredient.value === 0) {
+                    setIngredientFilter(null);
+                    return;
+                  }
+
+                  setIngredientFilter({
+                    id: ingredient.value,
+                    name: ingredient.label,
+                  });
+                }}
+                options={ingredientOptions}
               />
 
               <AppSelect
@@ -469,7 +524,10 @@ const filteredProducts = products
                 </div>
               </div>
               <div className="text-sm text-white/70">
-              <span>Category: {product.product_category?.name || "N/A"}</span>
+                <span>Category: {product.product_category?.name || "N/A"}</span>
+              </div>
+              <div className="text-sm text-white/70">
+                <span>Ingredient: {product.ingredient?.name || "N/A"}</span>
               </div>
             </div>
 
@@ -506,7 +564,7 @@ const filteredProducts = products
       >
         <DialogTitle>Edit Product</DialogTitle>
 
-        <DialogContent className="space-y-4 pt-2">
+        <DialogContent className="space-y-4 pt-2" sx={{ overflowY: "visible" }}>
           {/* Name */}
           <div>
             <AppInput
