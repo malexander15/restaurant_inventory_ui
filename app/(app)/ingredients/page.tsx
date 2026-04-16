@@ -6,15 +6,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import AppAlert from "@/app/components/ui/AppAlert";
 import AppButton from "@/app/components/ui/AppButton";
+import AppDialog from "@/app/components/ui/AppDialog";
 import AppInput from "@/app/components/ui/AppInput";
+import { AppSelect } from "@/app/components/ui/AppSelect";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import { apiFetch } from "@/app/lib/api";
-import {
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-} from "@mui/material";
 
 type Ingredient = {
   id: number;
@@ -22,9 +18,11 @@ type Ingredient = {
   unit: string;
 };
 
+type IngredientUnit = "oz" | "pcs";
+
 type IngredientForm = {
   name: string;
-  unit: string;
+  unit: IngredientUnit;
 };
 
 type AlertState = {
@@ -35,8 +33,13 @@ type AlertState = {
 
 const emptyForm = (): IngredientForm => ({
   name: "",
-  unit: "",
+  unit: "oz",
 });
+
+const UNIT_OPTIONS: { label: string; value: IngredientUnit }[] = [
+  { label: "Ounces (oz)", value: "oz" },
+  { label: "Pieces (pcs)", value: "pcs" },
+];
 
 export default function IngredientsPage() {
   const router = useRouter();
@@ -146,7 +149,7 @@ export default function IngredientsPage() {
     setEditTarget(ingredient);
     setEditForm({
       name: ingredient.name,
-      unit: ingredient.unit,
+      unit: ingredient.unit === "pcs" ? "pcs" : "oz",
     });
   }
 
@@ -165,6 +168,15 @@ export default function IngredientsPage() {
         open: true,
         severity: "error",
         message: "Ingredient unit is required",
+      });
+      return false;
+    }
+
+    if (!UNIT_OPTIONS.some((option) => option.value === form.unit)) {
+      setAlert({
+        open: true,
+        severity: "error",
+        message: "Ingredient unit must be oz or pcs",
       });
       return false;
     }
@@ -348,95 +360,90 @@ export default function IngredientsPage() {
         </div>
       )}
 
-      <Dialog
+      <AppDialog
         open={createOpen}
         onClose={resetCreateDialog}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundColor: "#262626",
-              color: "white",
-              border: "1px solid #333",
-            },
-          },
+        title="Add Ingredient"
+        contentSx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
         }}
+        actions={
+          <>
+            <AppButton intent="ghost" onClick={resetCreateDialog}>
+              Cancel
+            </AppButton>
+            <AppButton onClick={handleCreate} disabled={createSubmitting}>
+              {createSubmitting ? "Saving..." : "Create Ingredient"}
+            </AppButton>
+          </>
+        }
       >
-        <DialogTitle>Add Ingredient</DialogTitle>
-        <DialogContent sx={{ pt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-          <AppInput
-            label="Ingredient Name"
-            value={createForm.name}
-            onChange={(value) =>
-              setCreateForm((prev) => ({ ...prev, name: value }))
-            }
-            testId="ingredient-name"
-            placeholder="e.g. Mozzarella"
-          />
-          <AppInput
-            label="Unit"
-            value={createForm.unit}
-            onChange={(value) =>
-              setCreateForm((prev) => ({ ...prev, unit: value }))
-            }
-            testId="ingredient-unit"
-            placeholder="e.g. oz, pcs, lb"
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: "1px solid #333" }}>
-          <AppButton intent="ghost" onClick={resetCreateDialog}>
-            Cancel
-          </AppButton>
-          <AppButton onClick={handleCreate} disabled={createSubmitting}>
-            {createSubmitting ? "Saving..." : "Create Ingredient"}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+        <AppInput
+          label="Ingredient Name"
+          value={createForm.name}
+          onChange={(value) =>
+            setCreateForm((prev) => ({ ...prev, name: value }))
+          }
+          testId="ingredient-name"
+          placeholder="e.g. Mozzarella"
+        />
+        <AppSelect<IngredientUnit>
+          label="Unit"
+          value={createForm.unit}
+          onChange={(value) =>
+            setCreateForm((prev) => ({
+              ...prev,
+              unit: Array.isArray(value) ? prev.unit : value,
+            }))
+          }
+          testId="ingredient-unit"
+          options={UNIT_OPTIONS}
+        />
+      </AppDialog>
 
-      <Dialog
+      <AppDialog
         open={!!editTarget}
         onClose={resetEditDialog}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundColor: "#262626",
-              color: "white",
-              border: "1px solid #333",
-            },
-          },
+        title="Edit Ingredient"
+        contentSx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
         }}
+        actions={
+          <>
+            <AppButton intent="ghost" onClick={resetEditDialog}>
+              Cancel
+            </AppButton>
+            <AppButton onClick={handleEditSave} disabled={editSubmitting}>
+              {editSubmitting ? "Saving..." : "Save Changes"}
+            </AppButton>
+          </>
+        }
       >
-        <DialogTitle>Edit Ingredient</DialogTitle>
-        <DialogContent sx={{ pt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-          <AppInput
-            label="Ingredient Name"
-            value={editForm.name}
-            onChange={(value) =>
-              setEditForm((prev) => ({ ...prev, name: value }))
-            }
-            testId="edit-ingredient-name"
-          />
-          <AppInput
-            label="Unit"
-            value={editForm.unit}
-            onChange={(value) =>
-              setEditForm((prev) => ({ ...prev, unit: value }))
-            }
-            testId="edit-ingredient-unit"
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: "1px solid #333" }}>
-          <AppButton intent="ghost" onClick={resetEditDialog}>
-            Cancel
-          </AppButton>
-          <AppButton onClick={handleEditSave} disabled={editSubmitting}>
-            {editSubmitting ? "Saving..." : "Save Changes"}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+        <AppInput
+          label="Ingredient Name"
+          value={editForm.name}
+          onChange={(value) =>
+            setEditForm((prev) => ({ ...prev, name: value }))
+          }
+          testId="edit-ingredient-name"
+        />
+        <AppSelect<IngredientUnit>
+          label="Unit"
+          value={editForm.unit}
+          onChange={(value) =>
+            setEditForm((prev) => ({
+              ...prev,
+              unit: Array.isArray(value) ? prev.unit : value,
+            }))
+          }
+          testId="edit-ingredient-unit"
+          options={UNIT_OPTIONS}
+        />
+      </AppDialog>
 
       <ConfirmDialog
         open={!!deleteTarget}
