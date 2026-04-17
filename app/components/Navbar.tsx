@@ -6,6 +6,7 @@ import { useState } from "react";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
+import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import { Tooltip } from "@mui/material";
@@ -104,6 +105,15 @@ export default function Navbar() {
                 </Link>
               </div>
             </details>
+
+            <Link
+              href="/ingredients"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-2 px-4 py-3 border-b border-gray-800 hover:bg-gray-100/10"
+            >
+              <RestaurantMenuIcon fontSize="small" />
+              Ingredients
+            </Link>
 
             <Link
               href="/pricing-calculator"

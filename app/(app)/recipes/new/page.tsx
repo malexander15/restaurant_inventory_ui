@@ -14,7 +14,7 @@ import NewRecipePageSkeleton from "@/app/(app)/recipes/new/NewRecipePageSkeleton
 import { apiFetch } from "@/app/lib/api";
 import { getErrorMessage } from "@/app/lib/errors";
 
-type Product = {
+type Ingredient = {
   id: number;
   name: string;
   unit: "oz" | "pcs";
@@ -34,8 +34,8 @@ type Recipe = {
 type IngredientOption = {
   id: number;
   name: string;
-  ingredientType: "Product" | "Recipe";
-  unit?: "oz" | "pcs"; // only for products
+  ingredientType: "Ingredient" | "Recipe";
+  unit?: "oz" | "pcs";
 };
 
 export default function NewRecipePage() {
@@ -52,10 +52,10 @@ export default function NewRecipePage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [errorAlert, setErrorAlert] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const products = ingredientOptions.filter(
-    (i) => i.ingredientType === "Product"
+  const ingredients = ingredientOptions.filter(
+    (i) => i.ingredientType === "Ingredient"
   );
 
   const preppedRecipes = ingredientOptions.filter(
@@ -64,12 +64,12 @@ export default function NewRecipePage() {
 
   const groupedIngredientOptions = [
     {
-      group: "Products",
-      options: products
+      group: "Ingredients",
+      options: ingredients
         .sort((a, b) => a.name.localeCompare(b.name))
-        .map((p) => ({
-          value: `Product-${p.id}`,
-          label: `${p.name}${p.unit ? ` (${p.unit})` : ""}`,
+        .map((ingredient) => ({
+          value: `Ingredient-${ingredient.id}`,
+          label: `${ingredient.name}${ingredient.unit ? ` (${ingredient.unit})` : ""}`,
         })),
     },
     {
@@ -165,16 +165,18 @@ export default function NewRecipePage() {
   useEffect(() => {
     async function loadIngredients() {
       try {
-        // 1️⃣ Load products
-        const products = await apiFetch<Product[]>("/products", {
+        setLoading(true);
+
+        // 1️⃣ Load ingredients
+        const ingredients = await apiFetch<Ingredient[]>("/ingredients", {
           cache: "no-store",
         });
 
-        let options: IngredientOption[] = products.map((p) => ({
-          id: p.id,
-          name: p.name,
-          ingredientType: "Product",
-          unit: p.unit,
+        let options: IngredientOption[] = ingredients.map((ingredient) => ({
+          id: ingredient.id,
+          name: ingredient.name,
+          ingredientType: "Ingredient",
+          unit: ingredient.unit,
         }));
 
         // 2️⃣ Load prepped recipes (only if NOT prepped)
@@ -311,7 +313,8 @@ export default function NewRecipePage() {
                     size="small"
                     min={0}
                     step={0.01}
-                    placeholder={ingredient.unit ? ingredient.unit : "qty"}testId="recipe-ingredient-quantity"
+                    placeholder={ingredient.unit ? ingredient.unit : "qty"}
+                    testId="recipe-ingredient-quantity"
                     value={quantities[key] || ""}
                     onChange={(val: string) =>
                       setQuantities({

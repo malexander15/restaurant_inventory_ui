@@ -9,6 +9,7 @@ import {
   createProduct,
   deleteProduct,
 } from '../helpers/products';
+import { createIngredient } from '../helpers/ingredients';
 
 test('recognized + unrecognized barcode can be replenished and created together', async ({ page }) => {
   // ---- Setup recognized product
@@ -17,6 +18,7 @@ test('recognized + unrecognized barcode can be replenished and created together'
     barcode: recognizedBarcode,
     stock: '10',
   });
+  const ingredient = await createIngredient(page);
 
   // ---- Unknown barcode
   const unknownBarcode = `UNKWN-${Date.now()}`;
@@ -49,6 +51,8 @@ test('recognized + unrecognized barcode can be replenished and created together'
     unknownProductName,
     { delay: 10 }
   );
+  await page.getByTestId('product-ingredient').click();
+  await page.getByRole('option', { name: ingredient.optionLabel }).click();
   await page.getByTestId('product-unit').click();
   await page.getByRole('option', { name: 'Oz' }).click();
   await page.getByTestId('product-stock').fill('10');

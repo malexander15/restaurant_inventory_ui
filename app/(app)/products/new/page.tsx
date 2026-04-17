@@ -22,6 +22,12 @@ type Category = {
   name: string;
 };
 
+type Ingredient = {
+  id: number;
+  name: string;
+  unit: string;
+};
+
 type ProductForm = {
   name: string;
   barcode: string;
@@ -29,6 +35,7 @@ type ProductForm = {
   stock_quantity: string;
   unit_cost: string;
   product_category_id: number;
+  ingredient_id: number;
 };
 
 type AlertState = {
@@ -39,6 +46,7 @@ type AlertState = {
 
 const ADD_CATEGORY_VALUE = -1;
 const NO_CATEGORY_VALUE = 0;
+const NO_INGREDIENT_VALUE = 0;
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -50,6 +58,7 @@ export default function NewProductPage() {
 
   const [products, setProducts] = useState<ProductForm[]>([emptyProduct()]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [alert, setAlert] = useState<AlertState>({
@@ -64,7 +73,7 @@ export default function NewProductPage() {
   const [creatingCategory, setCreatingCategory] = useState(false);
 
   const GRID_COLS =
-    "grid-cols-3 md:grid-cols-[2fr_2fr_2fr_1fr_1.5fr_1.5fr_32px]";
+    "grid-cols-2 md:grid-cols-[1.7fr_1.8fr_1.5fr_1.2fr_1fr_1.2fr_1.3fr_32px]";
 
   function emptyProduct(): ProductForm {
     return {
@@ -74,6 +83,7 @@ export default function NewProductPage() {
       stock_quantity: "",
       unit_cost: "",
       product_category_id: NO_CATEGORY_VALUE,
+      ingredient_id: NO_INGREDIENT_VALUE,
     };
   }
 
@@ -108,12 +118,27 @@ export default function NewProductPage() {
     setCategories(data);
   }
 
+  async function loadIngredients() {
+    const data = await apiFetch<Ingredient[]>("/ingredients", {
+      cache: "no-store",
+    });
+    setIngredients(data);
+  }
+
   useEffect(() => {
     loadCategories().catch(() => {
       setAlert({
         open: true,
         severity: "error",
         message: "Failed to load categories",
+      });
+    });
+
+    loadIngredients().catch(() => {
+      setAlert({
+        open: true,
+        severity: "error",
+        message: "Failed to load ingredients",
       });
     });
   }, []);
@@ -132,6 +157,7 @@ export default function NewProductPage() {
         stock_quantity: "",
         unit_cost: "",
         product_category_id: NO_CATEGORY_VALUE,
+        ingredient_id: NO_INGREDIENT_VALUE,
       }))
     );
 
@@ -148,6 +174,17 @@ export default function NewProductPage() {
         value: c.id,
       })),
     { label: "+ Add Category", value: ADD_CATEGORY_VALUE },
+  ];
+
+  const ingredientOptions = [
+    { label: "Select Ingredient", value: NO_INGREDIENT_VALUE },
+    ...ingredients
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((ingredient) => ({
+        label: `${ingredient.name} (${ingredient.unit})`,
+        value: ingredient.id,
+      })),
   ];
 
   async function handleCreateCategory() {
@@ -232,6 +269,16 @@ export default function NewProductPage() {
         setLoading(false);
         return;
       }
+
+      if (product.ingredient_id === NO_INGREDIENT_VALUE) {
+        setAlert({
+          open: true,
+          severity: "error",
+          message: "Please select an ingredient for every product",
+        });
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -249,6 +296,7 @@ export default function NewProductPage() {
                 product.product_category_id === NO_CATEGORY_VALUE
                   ? null
                   : product.product_category_id,
+              ingredient_id: product.ingredient_id,
             },
           }),
         });
@@ -333,6 +381,20 @@ export default function NewProductPage() {
               </div>
 
               <div>
+                <AppSelect<number>
+                  label="Ingredient"
+                  value={product.ingredient_id}
+                  testId="product-ingredient"
+                  onChange={(val) =>
+                    updateProduct(index, {
+                      ingredient_id: Number(val),
+                    })
+                  }
+                  options={ingredientOptions}
+                />
+              </div>
+
+              <div>
                 <AppInput
                   label="Quantity"
                   type="number"
@@ -367,7 +429,7 @@ export default function NewProductPage() {
                 />
               </div>
 
-              <div className="order-7 md:order-none col-span-3 md:col-span-1 flex justify-end md:justify-center">
+              <div className="order-8 md:order-none col-span-2 md:col-span-1 flex justify-end md:justify-center">
                 {products.length > 1 && (
                   <Tooltip title="Remove product" arrow>
                     <IconButton

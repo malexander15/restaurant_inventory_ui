@@ -48,6 +48,21 @@ export function AppSelect<T extends string | number = string>({
       )
     : (options as SelectOption<T>[]);
 
+  const menuProps = {
+    autoFocus: !(checkbox && multiple),
+    disableAutoFocusItem: checkbox && multiple,
+    MenuListProps: {
+      autoFocusItem: !(checkbox && multiple),
+    },
+    PaperProps: {
+      sx: {
+        backgroundColor: "#262626",
+        color: "white",
+        border: "1px solid #333",
+      },
+    },
+  };
+
   return (
     <FormControl fullWidth={fullWidth}>
       <InputLabel sx={{ color: "white" }}>
@@ -86,15 +101,7 @@ export function AppSelect<T extends string | number = string>({
             )?.label ?? ""
           );
         }}
-        MenuProps={{
-          PaperProps: {
-            sx: {
-              backgroundColor: "#262626",
-              color: "white",
-              border: "1px solid #333",
-            },
-          },
-        }}
+        MenuProps={menuProps}
         sx={{
           "& .MuiSelect-select": {
             color: "white",
