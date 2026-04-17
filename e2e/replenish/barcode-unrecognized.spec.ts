@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { navigateToReplenish, scanUnrecognizedBarcode } from '../helpers/replenish';
 import { deleteProduct } from '../helpers/products';
+import { createIngredient } from '../helpers/ingredients';
 
 test('unrecognized barcode can be staged and created as product', async ({ page }) => {
   const barcode = `UNKWN-${Date.now()}`;
   const productName = `From Barcode ${Date.now()}`;
+  const ingredient = await createIngredient(page);
 
   // Go to replenish
   await navigateToReplenish(page);
@@ -29,6 +31,8 @@ test('unrecognized barcode can be staged and created as product', async ({ page 
 
   // Fill remaining fields
   await page.getByTestId('product-name').type(productName, { delay: 10 });
+  await page.getByTestId('product-ingredient').click();
+  await page.getByRole('option', { name: ingredient.optionLabel }).click();
   await page.getByTestId('product-unit').click();
   await page.getByRole('option', { name: 'Oz' }).click();
   await page.getByTestId('product-stock').fill('10');
@@ -44,4 +48,3 @@ test('unrecognized barcode can be staged and created as product', async ({ page 
   // Cleanup
   await deleteProduct(page, productName);
 });
-

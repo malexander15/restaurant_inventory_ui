@@ -1,9 +1,11 @@
 import { expect, Page } from '@playwright/test';
+import { createIngredient } from './ingredients';
+import { createProduct } from './products';
 
 type CreateRecipeOptions = {
   recipe_type?: 'menu_item' | 'prepped_item';
   name?: string;
-  ingredientName?: RegExp;
+  ingredientName?: string | RegExp;
   quantity?: string;
 };
 
@@ -13,10 +15,24 @@ export async function createRecipe(
 ) {
   const recipeName =
     options.name ?? `PW Recipe ${Date.now()}`;
-  const ingredient =
-    options.ingredientName ?? /cheese/i;
   const quantity =
     options.quantity ?? '1';
+
+  const ingredient = options.ingredientName
+    ? null
+    : await createIngredient(page);
+
+  const ingredientOptionLabel =
+    options.ingredientName ?? ingredient!.optionLabel;
+
+  if (ingredient) {
+    await createProduct(page, {
+      ingredientName: ingredient.name,
+      ingredientUnit: ingredient.unit,
+      stock: '10',
+    });
+  }
+
   await page.goto('/recipes/new');
 
   await expect(
@@ -30,8 +46,14 @@ export async function createRecipe(
   await nameInput.pressSequentially(recipeName, { delay: 20 });
   await expect(nameInput).toHaveValue(recipeName);
 
+  if (options.recipe_type === 'prepped_item') {
+    await page.getByRole('checkbox').click();
+  }
+
   await page.getByTestId('recipe-ingredient-select').click();
-  await page.getByRole('option', { name: ingredient }).click();
+  await page
+    .getByRole('option', { name: ingredientOptionLabel })
+    .click();
   await page.keyboard.press('Escape');
 
   await page
@@ -113,6 +135,3 @@ export async function deleteRecipe(
 
   await expect(recipeRow).not.toBeVisible({ timeout: 10000 });
 }
-
-
-

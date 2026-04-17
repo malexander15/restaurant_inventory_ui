@@ -1,5 +1,6 @@
 // e2e/helpers/products.ts
 import { expect, Page } from "@playwright/test";
+import { createIngredient } from "./ingredients";
 
 type CreateProductOptions = {
   name?: string;
@@ -8,6 +9,8 @@ type CreateProductOptions = {
   unit?: "Oz" | "Pcs";
   barcode?: string;
   category?: string;
+  ingredientName?: string;
+  ingredientUnit?: "oz" | "pcs";
 };
 
 type EditProductOptions = {
@@ -23,7 +26,19 @@ export async function createProduct(
   options: CreateProductOptions = {}
 ) {
   const productName = options.name ?? `PW Product ${Date.now()}`;
-  const barcode = options.barcode;
+  const barcode = options.barcode ?? `PW-${Date.now()}`;
+  const ingredient =
+    options.ingredientName
+      ? {
+          optionLabel: `${options.ingredientName} (${options.ingredientUnit ?? "oz"})`,
+          unit: options.ingredientUnit ?? "oz",
+        }
+      : await createIngredient(page, {
+          unit: options.ingredientUnit,
+        });
+
+  const productUnit =
+    options.unit ?? (ingredient.unit === "pcs" ? "Pcs" : "Oz");
 
   await page.goto("/products/new");
 
@@ -36,16 +51,21 @@ export async function createProduct(
     await page.getByRole("option", { name: options.category }).click();
   }
 
-  if (barcode) {
-    const barcodeInput = page.getByTestId("product-barcode");
-    await barcodeInput.click();
-    await barcodeInput.type(barcode, { delay: 10 });
-  }
+  const barcodeInput = page.getByTestId("product-barcode");
+  await barcodeInput.click();
+  await barcodeInput.type(barcode, { delay: 10 });
+
+  await page.getByTestId("product-ingredient").click();
+  await page
+    .getByRole("option", {
+      name: ingredient.optionLabel,
+    })
+    .click();
 
   await page.getByTestId("product-unit").click();
   await page
     .getByRole("option", {
-      name: options.unit ?? "Oz",
+      name: productUnit,
     })
     .click();
 
@@ -64,6 +84,7 @@ export async function createProduct(
 
   return {
     name: productName,
+    ingredientName: ingredient.optionLabel,
   };
 }
 
