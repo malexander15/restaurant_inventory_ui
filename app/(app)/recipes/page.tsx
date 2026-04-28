@@ -31,12 +31,26 @@ type RecipeIngredient = {
   id: number;
   recipe_id: number;
   ingredient_id: number;
+  ingredient_type?: "Ingredient" | "Recipe";
   quantity: number;
   ingredient: {
     id: number;
     name: string;
-    unit: string;
+    unit?: string;
   } | null;
+};
+
+type IngredientOption = {
+  id: number;
+  name: string;
+  ingredientType: "Ingredient" | "Recipe";
+  unit?: "oz" | "pcs";
+};
+
+type Ingredient = {
+  id: number;
+  name: string;
+  unit: "oz" | "pcs";
 };
 
 export default function RecipesPage() {
@@ -62,6 +76,10 @@ export default function RecipesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Recipe | null>(null);
   const [isEditingIngredients, setIsEditingIngredients] = useState(false);
   const [ingredientDrafts, setIngredientDrafts] = useState<Record<number, string>>({});
+  const [ingredientOptions, setIngredientOptions] = useState<IngredientOption[]>([]);
+  const [newIngredientKeys, setNewIngredientKeys] = useState<string[]>([]);
+  const [newIngredientQuantities, setNewIngredientQuantities] = useState<Record<string, string>>({});
+  const [deletedIngredientIds, setDeletedIngredientIds] = useState<number[]>([]);
 // 🔍 Filters
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
   const filtersOpen = Boolean(filterAnchor);
@@ -69,27 +87,62 @@ export default function RecipesPage() {
   const [typeFilter, setTypeFilter] =
   useState<"" | "menu_item" | "prepped_item">("");
 
+  async function loadRecipes() {
+    try {
+      const data = await apiFetch<Recipe[]>("/recipes", {
+        cache: "no-store",
+      });
+      setRecipes(data);
+    } catch {
+      // apiFetch will redirect on 401 automatically
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    async function loadRecipes() {
+    loadRecipes();
+  }, [searchParams]);
+
+  useEffect(() => {
+    async function loadIngredientOptions() {
       try {
-        const data = await apiFetch<Recipe[]>("/recipes", {
+        const ingredients = await apiFetch<Ingredient[]>("/ingredients", {
           cache: "no-store",
         });
-        setRecipes(data);
-      } catch {
-        // apiFetch will redirect on 401 automatically
-      } finally {
-        setLoading(false);
+
+        const preppedRecipes = await apiFetch<Recipe[]>("/recipes?recipe_type=prepped_item", {
+          cache: "no-store",
+        });
+
+        setIngredientOptions([
+          ...ingredients.map((ingredient) => ({
+            id: ingredient.id,
+            name: ingredient.name,
+            ingredientType: "Ingredient" as const,
+            unit: ingredient.unit,
+          })),
+          ...preppedRecipes.map((recipe) => ({
+            id: recipe.id,
+            name: recipe.name,
+            ingredientType: "Recipe" as const,
+          })),
+        ]);
+      } catch (err) {
+        console.error("Failed to load ingredient options", err);
       }
     }
 
-    loadRecipes();
-  }, [searchParams]);
+    loadIngredientOptions();
+  }, []);
 
 
   useEffect(() => {
     setIsEditingIngredients(false);
     setIngredientDrafts({});
+    setNewIngredientKeys([]);
+    setNewIngredientQuantities({});
+    setDeletedIngredientIds([]);
   }, [expandedRecipeId]);
 
   useEffect(() => {
@@ -165,8 +218,24 @@ export default function RecipesPage() {
 
   // For editing ingredient quantities
   async function handleIngredientsSave(recipe: Recipe) {
+    const hasInvalidNewQuantity = newIngredientKeys.some((key) => {
+      const quantity = Number(newIngredientQuantities[key]);
+      return !quantity || quantity <= 0;
+    });
+
+    if (hasInvalidNewQuantity) {
+      setAlert({
+        open: true,
+        severity: "error",
+        message: "All new ingredients must have a quantity",
+      });
+      return;
+    }
+
     try {
       for (const ri of recipe.recipe_ingredients) {
+        if (deletedIngredientIds.includes(ri.id)) continue;
+
         const draft = ingredientDrafts[ri.id];
 
         if (draft === undefined || draft === "") continue;
@@ -184,25 +253,43 @@ export default function RecipesPage() {
         );
       }
 
-      // ✅ Update UI optimistically
-      setRecipes((prev) =>
-        prev.map((r) =>
-          r.id === recipe.id
-            ? {
-                ...r,
-                recipe_ingredients: r.recipe_ingredients.map((ri) => ({
-                  ...ri,
-                  quantity: Number(
-                    ingredientDrafts[ri.id] ?? ri.quantity
-                  ),
-                })),
-              }
-            : r
-        )
-      );
+      for (const ingredientId of deletedIngredientIds) {
+        await apiFetch(
+          `/recipes/${recipe.id}/recipe_ingredients/${ingredientId}`,
+          {
+            method: "DELETE",
+          }
+        );
+      }
+
+      for (const key of newIngredientKeys) {
+        const quantity = Number(newIngredientQuantities[key]);
+        if (!quantity || quantity <= 0) continue;
+
+        const [ingredientType, id] = key.split("-");
+
+        await apiFetch(
+          `/recipes/${recipe.id}/recipe_ingredients`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              recipe_ingredient: {
+                ingredient_id: Number(id),
+                ingredient_type: ingredientType,
+                quantity,
+              },
+            }),
+          }
+        );
+      }
+
+      await loadRecipes();
 
       setIsEditingIngredients(false);
       setIngredientDrafts({});
+      setNewIngredientKeys([]);
+      setNewIngredientQuantities({});
+      setDeletedIngredientIds([]);
     } catch {
       setAlert({
         open: true,
@@ -212,34 +299,60 @@ export default function RecipesPage() {
     }
   }
 
-  // For deleting ingredients from a recipe
-  // (not used in UI yet)
-  
-  // async function handleIngredientDelete(ri: any) {
-  //   if (!confirm("Remove this ingredient?")) return;
+  function getIngredientKey(option: IngredientOption) {
+    return `${option.ingredientType}-${option.id}`;
+  }
 
-  //   const res = await fetch(
-  //     `${process.env.NEXT_PUBLIC_API_URL}/recipes/${ri.recipe_id}/recipe_ingredients/${ri.id}`,
-  //     {
-  //       method: "DELETE",
-  //     }
-  //   );
+  function getRecipeIngredientKey(ri: RecipeIngredient) {
+    return `${ri.ingredient_type ?? "Ingredient"}-${ri.ingredient_id}`;
+  }
 
-  //   if (!res.ok) return;
+  function getIngredientOption(key: string) {
+    return ingredientOptions.find((option) => getIngredientKey(option) === key);
+  }
 
-  //   setRecipes((prev) =>
-  //     prev.map((recipe) =>
-  //       recipe.id === ri.recipe_id
-  //         ? {
-  //             ...recipe,
-  //             recipe_ingredients: recipe.recipe_ingredients.filter(
-  //               (x: any) => x.id !== ri.id
-  //             ),
-  //           }
-  //         : recipe
-  //     )
-  //   );
-  // }
+  function getGroupedIngredientOptions(recipe: Recipe) {
+    const existingKeys = new Set(
+      recipe.recipe_ingredients
+        .filter((ri) => !deletedIngredientIds.includes(ri.id))
+        .map(getRecipeIngredientKey)
+    );
+
+    const ingredients = ingredientOptions.filter(
+      (option) =>
+        option.ingredientType === "Ingredient" &&
+        !existingKeys.has(getIngredientKey(option))
+    );
+
+    const preppedRecipes = ingredientOptions.filter(
+      (option) =>
+        recipe.recipe_type !== "prepped_item" &&
+        option.ingredientType === "Recipe" &&
+        option.id !== recipe.id &&
+        !existingKeys.has(getIngredientKey(option))
+    );
+
+    return [
+      {
+        group: "Ingredients",
+        options: ingredients
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((ingredient) => ({
+            value: getIngredientKey(ingredient),
+            label: `${ingredient.name}${ingredient.unit ? ` (${ingredient.unit})` : ""}`,
+          })),
+      },
+      {
+        group: "Prepped Items",
+        options: preppedRecipes
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((recipe) => ({
+            value: getIngredientKey(recipe),
+            label: recipe.name,
+          })),
+      },
+    ].filter((group) => group.options.length > 0);
+  }
 
   const filteredRecipes = recipes
     .filter((recipe) => {
@@ -382,6 +495,10 @@ export default function RecipesPage() {
       >
         {filteredRecipes.map((recipe) => {
           const isExpanded = expandedRecipeId === recipe.id;
+          const visibleRecipeIngredients = recipe.recipe_ingredients.filter(
+            (ri) => !deletedIngredientIds.includes(ri.id)
+          );
+          const groupedIngredientOptions = getGroupedIngredientOptions(recipe);
 
           return (
             <div
@@ -464,6 +581,9 @@ export default function RecipesPage() {
                               {}
                             )
                           );
+                          setNewIngredientKeys([]);
+                          setNewIngredientQuantities({});
+                          setDeletedIngredientIds([]);
                           setIsEditingIngredients(true);
                         }}
                         intent="secondary"
@@ -479,13 +599,17 @@ export default function RecipesPage() {
                         >
                           Save
                         </AppButton>
-                        <AppButton
-                          data-testid={`recipe-ingredients-cancel-${recipe.id}`}
-                          onClick={() => {
-                            setIsEditingIngredients(false);
-                          }}
-                          intent="ghost"
-                        >
+                          <AppButton
+                            data-testid={`recipe-ingredients-cancel-${recipe.id}`}
+                            onClick={() => {
+                              setIsEditingIngredients(false);
+                              setIngredientDrafts({});
+                              setNewIngredientKeys([]);
+                              setNewIngredientQuantities({});
+                              setDeletedIngredientIds([]);
+                            }}
+                            intent="ghost"
+                          >
                           Cancel
                         </AppButton>
                       </div>
@@ -493,7 +617,89 @@ export default function RecipesPage() {
                   </div>
 
                   {/* Ingredient list */}
-                  {!recipe.recipe_ingredients ||recipe.recipe_ingredients.length === 0 ? (
+                  {isEditingIngredients && (
+                    <div className="space-y-2">
+                      {groupedIngredientOptions.length > 0 && (
+                        <AppSelect<string>
+                          label="Add Ingredients"
+                          multiple
+                          checkbox
+                          value={newIngredientKeys}
+                          testId={`recipe-ingredients-add-${recipe.id}`}
+                          onChange={(vals) => {
+                            const nextKeys = Array.isArray(vals) ? vals : [vals];
+                            setNewIngredientKeys(nextKeys);
+                            setNewIngredientQuantities((prev) =>
+                              nextKeys.reduce<Record<string, string>>((acc, key) => {
+                                acc[key] = prev[key] ?? "";
+                                return acc;
+                              }, {})
+                            );
+                          }}
+                          options={groupedIngredientOptions}
+                        />
+                      )}
+
+                      {newIngredientKeys.map((key) => {
+                        const ingredient = getIngredientOption(key);
+
+                        if (!ingredient) return null;
+
+                        return (
+                          <div
+                            key={key}
+                            className="flex items-center justify-between text-sm gap-4"
+                            data-testid={`recipe-new-ingredient-row-${key}`}
+                          >
+                            <span className="text-gray-400 flex-1">
+                              {ingredient.name}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <AppInput
+                                type="text"
+                                label=""
+                                testId={`recipe-new-ingredient-qty-${key}`}
+                                min={0.01}
+                                step={0.01}
+                                width={60}
+                                inputPadding="4px 6px"
+                                fullWidth={false}
+                                value={newIngredientQuantities[key] ?? ""}
+                                onChange={(val) =>
+                                  setNewIngredientQuantities({
+                                    ...newIngredientQuantities,
+                                    [key]: val,
+                                  })
+                                }
+                                size="small"
+                              />
+                              <span className="text-gray-500 w-8">
+                                {ingredient.unit ?? "qty"}
+                              </span>
+                              <HighlightOffIcon
+                                className="cursor-pointer text-red-400 hover:text-red-300"
+                                sx={{ fontSize: ".9rem" }}
+                                data-testid={`recipe-new-ingredient-remove-${key}`}
+                                onClick={() => {
+                                  setNewIngredientKeys((prev) =>
+                                    prev.filter((item) => item !== key)
+                                  );
+                                  setNewIngredientQuantities((prev) => {
+                                    const next = { ...prev };
+                                    delete next[key];
+                                    return next;
+                                  });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {!visibleRecipeIngredients || visibleRecipeIngredients.length === 0 ? (
                     <div className="text-sm text-gray-500">
                       No ingredients yet
                     </div>
@@ -502,7 +708,7 @@ export default function RecipesPage() {
                       className="space-y-2"
                       data-testid={`recipe-ingredients-list-${recipe.id}`}
                     >
-                      {recipe.recipe_ingredients.map((ri: RecipeIngredient) => (
+                      {visibleRecipeIngredients.map((ri: RecipeIngredient) => (
                         <li
                           key={ri.id}
                           data-testid={`recipe-ingredient-row-${ri.id}`}
@@ -515,7 +721,7 @@ export default function RecipesPage() {
 
                           {/* Quantity */}
                           {isEditingIngredients ? (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                               <AppInput
                                 type="text"
                                 label=""
@@ -537,6 +743,16 @@ export default function RecipesPage() {
                               <span className="text-gray-500">
                                 {ri.ingredient?.unit ?? "qty"}
                               </span>
+                              <HighlightOffIcon
+                                className="cursor-pointer text-red-400 hover:text-red-300"
+                                sx={{ fontSize: ".9rem" }}
+                                data-testid={`recipe-ingredient-remove-${ri.id}`}
+                                onClick={() =>
+                                  setDeletedIngredientIds((prev) =>
+                                    prev.includes(ri.id) ? prev : [...prev, ri.id]
+                                  )
+                                }
+                              />
                             </div>
                           ) : (
                             <span className="text-gray-500 w-24 text-right">
