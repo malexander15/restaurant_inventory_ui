@@ -38,6 +38,7 @@ type Product = {
   ingredient?: {
     id: number
     name: string
+    unit?: string
   } | null
 }
 
@@ -49,6 +50,7 @@ type Category = {
 type Ingredient = {
   id: number
   name: string
+  unit?: string
 }
 
 type EditProductForm = {
@@ -57,12 +59,16 @@ type EditProductForm = {
   unit: "oz" | "pcs";
   unit_cost: string;
   product_category_id?: number
+  ingredient_id: number
 };
 
+const NO_CATEGORY_VALUE = 0;
+const NO_INGREDIENT_VALUE = 0;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{
@@ -89,7 +95,8 @@ export default function ProductsPage() {
     barcode: "",
     unit: "oz",
     unit_cost: "",
-    product_category_id: 0,
+    product_category_id: NO_CATEGORY_VALUE,
+    ingredient_id: NO_INGREDIENT_VALUE,
   });
   // 📜 URL params
   const router = useRouter();
@@ -142,6 +149,21 @@ export default function ProductsPage() {
     loadCategories();
   }, []);
 
+  useEffect(() => {
+    async function loadIngredients() {
+      try {
+        const data = await apiFetch<Ingredient[]>("/ingredients", {
+          cache: "no-store",
+        });
+        setIngredients(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadIngredients();
+  }, []);
+
   // ✅ fetch products in an effect
   useEffect(() => {
     async function loadProducts() {
@@ -163,7 +185,7 @@ export default function ProductsPage() {
   }
 
   const categoryOptions = [
-  { label: "No Category", value: 0 },
+  { label: "No Category", value: NO_CATEGORY_VALUE },
   ...categories.map((c) => ({
     label: c.name,
     value: (c.id),
@@ -171,7 +193,18 @@ export default function ProductsPage() {
 ]
 
 const ingredientOptions = [
-  { label: "Ingredients", value: 0 },
+  { label: "Select Ingredient", value: NO_INGREDIENT_VALUE },
+  ...ingredients
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((ingredient) => ({
+      label: `${ingredient.name}${ingredient.unit ? ` (${ingredient.unit})` : ""}`,
+      value: ingredient.id,
+    })),
+]
+
+const ingredientFilterOptions = [
+  { label: "Ingredients", value: NO_INGREDIENT_VALUE },
   ...Array.from(
     new Map(
       products
@@ -266,6 +299,37 @@ const filteredProducts = products
   async function handleEditSave() {
   if (!editTarget) return;
 
+  const selectedIngredient = ingredients.find(
+    (ingredient) => ingredient.id === editForm.ingredient_id
+  );
+
+  if (!editForm.name.trim()) {
+    setAlert({
+      open: true,
+      severity: "error",
+      message: "The products name cannot be updated with name of blank",
+    });
+    return;
+  }
+
+  if (!editForm.barcode.trim()) {
+    setAlert({
+      open: true,
+      severity: "error",
+      message: "Barcode cannot be empty",
+    });
+    return;
+  }
+
+  if (selectedIngredient?.unit && selectedIngredient.unit !== editForm.unit) {
+    setAlert({
+      open: true,
+      severity: "error",
+      message: "Products unit must match the unit of the ingredient assigned to product",
+    });
+    return;
+  }
+
   try {
     const updated = await apiFetch<Product>(
       `/products/${editTarget.id}`,
@@ -277,9 +341,10 @@ const filteredProducts = products
             barcode: editForm.barcode,
             unit: editForm.unit,
             unit_cost: Number(editForm.unit_cost),
-            product_category_id: editForm.product_category_id === 0
+            product_category_id: editForm.product_category_id === NO_CATEGORY_VALUE
               ? null
-              : editForm.product_category_id
+              : editForm.product_category_id,
+            ingredient_id: editForm.ingredient_id,
           },
         }),
       }
@@ -294,14 +359,20 @@ const filteredProducts = products
       severity: "success",
       message: "Product updated successfully!",
     });
-    } catch {
+    setEditTarget(null);
+    } catch (err) {
+      const message =
+        err instanceof Error &&
+        err.message.toLowerCase().includes("unit") &&
+        err.message.toLowerCase().includes("ingredient")
+          ? "Products unit must match the unit of the ingredient assigned to product"
+          : "Failed to update product";
+
       setAlert({
         open: true,
         severity: "error",
-        message: "Failed to update product",
+        message,
       });
-    } finally {
-      setEditTarget(null);
     }
   }
 
@@ -378,11 +449,11 @@ const filteredProducts = products
                 label="Ingredient"
                 value={ingredientFilter?.id || 0}
                 onChange={(val) => {
-                  const ingredient = ingredientOptions.find(
+                  const ingredient = ingredientFilterOptions.find(
                     (option) => option.value === Number(val)
                   );
 
-                  if (!ingredient || ingredient.value === 0) {
+                  if (!ingredient || ingredient.value === NO_INGREDIENT_VALUE) {
                     setIngredientFilter(null);
                     return;
                   }
@@ -392,7 +463,7 @@ const filteredProducts = products
                     name: ingredient.label,
                   });
                 }}
-                options={ingredientOptions}
+                options={ingredientFilterOptions}
               />
 
               <AppSelect
@@ -508,7 +579,10 @@ const filteredProducts = products
                         barcode: product.barcode || "",
                         unit: product.unit ?? "oz",
                         unit_cost: product.unit_cost,
-                        product_category_id: product.product_category?.id
+                        product_category_id:
+                          product.product_category?.id ?? NO_CATEGORY_VALUE,
+                        ingredient_id:
+                          product.ingredient?.id ?? NO_INGREDIENT_VALUE,
                       });
                     }}
                   />
@@ -588,12 +662,25 @@ const filteredProducts = products
             })
           }
           options={[
-            { label: "No Category", value: 0 },
+            { label: "No Category", value: NO_CATEGORY_VALUE },
             ...categories.map((c) => ({
               label: c.name,
               value: c.id,
             })),
           ]}
+        />
+
+        <AppSelect<number>
+          label="Ingredient"
+          testId="edit-product-ingredient"
+          value={editForm.ingredient_id}
+          onChange={(val) =>
+            setEditForm({
+              ...editForm,
+              ingredient_id: Number(val),
+            })
+          }
+          options={ingredientOptions}
         />
 
         <AppInput
