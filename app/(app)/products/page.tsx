@@ -423,7 +423,7 @@ const filteredProducts = products
                 backgroundColor: "#262626",
                 border: "1px solid #333",
                 borderRadius: 2,
-                p: 2,
+                p: 1.5,
                 width: 260,
               },
             }}
@@ -433,7 +433,7 @@ const filteredProducts = products
                 Filters
               </div>
 
-              <Divider sx={{ borderColor: "#333" }} />
+              <Divider sx={{ borderColor: "#fefefe", mb: 1.5 }} />
 
               <AppSelect
                 label="Category"
@@ -443,11 +443,12 @@ const filteredProducts = products
                   setCategoryFilter((category as Category) || null);
                 }}
                 options={categoryOptions}
+                sx={{ mb: 1.5 }}
               />
 
               <AppSelect
                 label="Ingredient"
-                value={ingredientFilter?.id || 0}
+                value={ingredientFilter?.id || ""}
                 onChange={(val) => {
                   const ingredient = ingredientFilterOptions.find(
                     (option) => option.value === Number(val)
@@ -464,6 +465,7 @@ const filteredProducts = products
                   });
                 }}
                 options={ingredientFilterOptions}
+                sx={{ mb: 1.5}}
               />
 
               <AppSelect
@@ -477,6 +479,7 @@ const filteredProducts = products
                   { label: "Ounces", value: "oz" },
                   { label: "Pieces", value: "pcs" },
                 ]}
+                sx={{ mb: 1.5 }}
               />
 
               <AppSelect
@@ -490,9 +493,8 @@ const filteredProducts = products
                   { label: "Low → High", value: "asc" },
                   { label: "High → Low", value: "desc" },
                 ]}
+                sx={{ mb: 1.5 }}
               />
-
-              <Divider sx={{ borderColor: "#333" }} />
 
               <AppButton
                 intent="secondary"
@@ -501,6 +503,7 @@ const filteredProducts = products
                   resetFilters();
                   setFiltersOpen(false);
                 }}
+                sx={{ mt: 1 }}
               >
                 Reset Filters
               </AppButton>
