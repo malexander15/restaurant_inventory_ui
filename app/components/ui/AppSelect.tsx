@@ -9,6 +9,7 @@ import {
   OutlinedInput,
   ListSubheader,
 } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import { GroupedSelectOption, SelectOption } from "./types";
 
 type AppSelectProps<T extends string | number = string> = {
@@ -23,6 +24,7 @@ type AppSelectProps<T extends string | number = string> = {
   fullWidth?: boolean;
   size?: "small" | "medium";
   testId?: string;
+  sx?: SxProps<Theme>;
 };
 
 export function AppSelect<T extends string | number = string>({
@@ -36,6 +38,7 @@ export function AppSelect<T extends string | number = string>({
   disabled = false,
   fullWidth = true,
   size = "medium",
+  sx,
 }: AppSelectProps<T>) {
   // ✅ detect grouped options
   const isGrouped =
@@ -64,7 +67,7 @@ export function AppSelect<T extends string | number = string>({
   };
 
   return (
-    <FormControl fullWidth={fullWidth}>
+    <FormControl fullWidth={fullWidth} sx={sx}>
       <InputLabel sx={{ color: "white" }}>
         {label}
       </InputLabel>
