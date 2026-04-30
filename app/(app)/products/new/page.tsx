@@ -28,14 +28,16 @@ type Ingredient = {
   unit: string;
 };
 
+type ProductUnit = "oz" | "pcs";
+
 type ProductForm = {
   name: string;
   barcode: string;
-  unit: "oz" | "pcs";
+  unit: ProductUnit | "";
   stock_quantity: string;
   unit_cost: string;
-  product_category_id: number;
-  ingredient_id: number;
+  product_category_id: number | "";
+  ingredient_id: number | "";
 };
 
 type AlertState = {
@@ -51,7 +53,7 @@ const NO_INGREDIENT_VALUE = 0;
 export default function NewProductPage() {
   const router = useRouter();
 
-  const unitOptions = [
+  const unitOptions: { value: ProductUnit; label: string }[] = [
     { value: "oz", label: "Oz" },
     { value: "pcs", label: "Pcs" },
   ];
@@ -79,11 +81,11 @@ export default function NewProductPage() {
     return {
       name: "",
       barcode: "",
-      unit: "oz",
+      unit: "",
       stock_quantity: "",
       unit_cost: "",
-      product_category_id: NO_CATEGORY_VALUE,
-      ingredient_id: NO_INGREDIENT_VALUE,
+      product_category_id: "",
+      ingredient_id: "",
     };
   }
 
@@ -153,11 +155,11 @@ export default function NewProductPage() {
       drafts.map((d) => ({
         name: d.name || "",
         barcode: d.barcode,
-        unit: "oz",
+        unit: "",
         stock_quantity: "",
         unit_cost: "",
-        product_category_id: NO_CATEGORY_VALUE,
-        ingredient_id: NO_INGREDIENT_VALUE,
+        product_category_id: "",
+        ingredient_id: "",
       }))
     );
 
@@ -270,11 +272,24 @@ export default function NewProductPage() {
         return;
       }
 
-      if (product.ingredient_id === NO_INGREDIENT_VALUE) {
+      if (
+        product.ingredient_id === "" ||
+        product.ingredient_id === NO_INGREDIENT_VALUE
+      ) {
         setAlert({
           open: true,
           severity: "error",
           message: "Please select an ingredient for every product",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!product.unit) {
+        setAlert({
+          open: true,
+          severity: "error",
+          message: "Please select a unit for every product",
         });
         setLoading(false);
         return;
@@ -293,6 +308,7 @@ export default function NewProductPage() {
               stock_quantity: Number(product.stock_quantity),
               unit_cost: Number(product.unit_cost),
               product_category_id:
+                product.product_category_id === "" ||
                 product.product_category_id === NO_CATEGORY_VALUE
                   ? null
                   : product.product_category_id,
@@ -350,7 +366,7 @@ export default function NewProductPage() {
               </div>
 
               <div>
-                <AppSelect<number>
+                <AppSelect<number | "">
                   label="Category"
                   value={product.product_category_id}
                   testId="product-category"
@@ -381,7 +397,7 @@ export default function NewProductPage() {
               </div>
 
               <div>
-                <AppSelect<number>
+                <AppSelect<number | "">
                   label="Ingredient"
                   value={product.ingredient_id}
                   testId="product-ingredient"
@@ -406,13 +422,13 @@ export default function NewProductPage() {
               </div>
 
               <div>
-                <AppSelect
+                <AppSelect<ProductUnit | "">
                   label="Unit"
                   options={unitOptions}
                   value={product.unit}
                   testId="product-unit"
                   onChange={(val) =>
-                    updateProduct(index, { unit: val as "oz" | "pcs" })
+                    updateProduct(index, { unit: val as ProductUnit })
                   }
                 />
               </div>
@@ -455,6 +471,7 @@ export default function NewProductPage() {
           onClick={addProduct}
           intent="secondary"
           data-testid="add-product-row"
+          sx={{ mr: 2 }}
         >
           + Add Product
         </AppButton>

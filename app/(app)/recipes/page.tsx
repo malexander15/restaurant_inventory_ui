@@ -419,10 +419,11 @@ export default function RecipesPage() {
             },
           }}
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="text-sm font-semibold text-white">
               Filters
             </div>
+            <Divider sx={{ borderColor: "#dfd8d8", mb: 1.5 }} />
 
             <AppSelect
               label="Recipe Type"
@@ -435,12 +436,11 @@ export default function RecipesPage() {
                 { label: "Menu Items", value: "menu_item" },
                 { label: "Prepped Items", value: "prepped_item" },
               ]}
+              sx={{ mb: 1.5 }}
             />
 
-            <Divider sx={{ borderColor: "#dfd8d8", margin: 1 }} />
-
             <AppButton
-              intent="ghost"
+              intent="secondary"
               fullWidth
               onClick={() => {
                 setTypeFilter("");
